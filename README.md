@@ -39,3 +39,26 @@ TripSplit - веб-приложение для совместного учета
 ## Формализация бизнес-процессов
 
 ![Формализация бизнес-процессов](img/Business-process/b_process.jpg)
+
+## Тип приложения
+TripSplit реализуется как многостраничное веб-приложение (Web MPA), работающее в браузере пользователя. Приложение состоит из нескольких логически обособленных страниц — в частности, страницы создания и ведения текущей поездки с калькулятором расходов и страницы истории завершённых поездок.
+
+## C4-диаграммы
+
+### L1 — Контекст системы
+![L1 Context](img/C4/L1-L3/L1_Context.png)
+
+### L2 — Контейнеры
+![L2 Containers](img/C4/L1-L3/L2_Containers.png)
+
+### L3 — Компоненты Frontend
+![L3 Frontend](img/C4/L1-L3/L3_Frontend.png)
+
+### L3 — Компоненты Backend
+![L3 Backend](img/C4/L1-L3/L3_Backend.png)
+
+### L4 — Диаграмма классов ExpenseRepository (компонент доступа к данным)
+![L4 ExpenseRepository](img/C4/L4/L4_Component_ExpenseRepository.png)
+
+### L4 — Диаграмма классов DebtSettlementService (компонент бизнес-логики)
+![L4 DebtSettlementService](img/C4/L4/L4_Component_DebtSettlementService.png)
