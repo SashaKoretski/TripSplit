@@ -1,0 +1,50 @@
+@startuml UseCase
+left to right direction
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+
+actor "Пользователь" as U
+actor "Участник" as P
+
+rectangle "TripSplit" {
+    ' Пользователь
+    usecase "Создать поездку" as UC_Create
+    usecase "Задать название" as UC_Name
+    usecase "Пригласить\nпользователей\n(ссылка)" as UC_Invite
+    usecase "Войти через Google" as UC_Login
+    usecase "Посмотреть траты" as UC_ViewExp
+    usecase "Посмотреть статистику" as UC_Stats
+    usecase "Посмотреть анализ\nраспределения долгов" as UC_Debts
+
+    ' Участник
+    usecase "Добавить трату" as UC_AddExp
+    usecase "Назначить цену" as UC_Price
+    usecase "Назначить\nоплачивающего" as UC_Payer
+    usecase "Назначить, на кого\nпотрачено" as UC_Consumer
+    usecase "Удалить трату" as UC_DelExp
+    usecase "Добавить чек" as UC_AddRcp
+    usecase "Привязать траты\nк чеку" as UC_LinkRcp
+    usecase "Закончить поездку" as UC_Finish
+
+    ' Include-связи
+    UC_Create ..> UC_Name    : <<include>>
+    UC_Create ..> UC_Invite  : <<include>>
+    UC_AddExp ..> UC_Price   : <<include>>
+    UC_AddExp ..> UC_Payer   : <<include>>
+    UC_AddExp ..> UC_Consumer: <<include>>
+    UC_AddRcp ..> UC_LinkRcp : <<include>>
+}
+
+' Актор → варианты использования
+U -- UC_Login
+U -- UC_Create
+U -- UC_ViewExp
+U -- UC_Stats
+U -- UC_Debts
+
+P -- UC_AddExp
+P -- UC_DelExp
+P -- UC_AddRcp
+P -- UC_Finish
+
+@enduml
