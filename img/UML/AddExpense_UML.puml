@@ -1,0 +1,33 @@
+@startuml Sequence_AddExpense
+title Добавление траты
+
+actor "Участник" as U
+participant "Frontend" as F
+participant "Backend" as B
+database "PostgreSQL" as DB
+database "S3 / MinIO" as S3
+
+U -> F : Открыть форму траты
+
+alt Есть чек
+    U -> F : Прикрепить фото чека
+    F -> B : POST /receipts (multipart)
+    B -> S3 : Upload file
+    S3 --> B : fileUrl
+    B -> DB : INSERT receipt(fileUrl)
+    DB --> B : receiptId
+    B --> F : { receiptId }
+
+    U -> F : Добавить траты из чека,\nпривязать к участникам
+    F -> B : POST /expenses [ ...items, receiptId ]
+else Без чека
+    U -> F : Указать сумму, плательщика,\nпотребителей
+    F -> B : POST /expenses { item }
+end
+
+B -> DB : INSERT expenses
+DB --> B : ok
+B --> F : { expenses }
+F --> U : Траты сохранены
+
+@enduml

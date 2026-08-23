@@ -1,0 +1,33 @@
+@startuml Sequence_CreateTrip
+title Создание поездки
+
+actor "Пользователь" as U
+participant "Frontend" as F
+participant "Backend" as B
+database "PostgreSQL" as DB
+
+U -> F : Ввести название поездки
+F -> B : POST /trips { name }
+B -> DB : INSERT trip
+DB --> B : tripId
+B --> F : { tripId, inviteLink }
+F --> U : Показать ссылку-приглашение
+
+U -> U : Отправить ссылку\nучастникам вручную
+
+loop Для каждого перешедшего по ссылке
+    U -> F : Открыть invite-ссылку
+    F -> B : POST /trips/{id}/join
+    B -> DB : INSERT participant
+    DB --> B : ok
+    B --> F : { participants }
+end
+
+U -> F : Начать поездку
+F -> B : POST /trips/{id}/start
+B -> DB : UPDATE trip SET status=Active
+DB --> B : ok
+B --> F : { status: Active }
+F --> U : Поездка активна
+
+@enduml

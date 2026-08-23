@@ -1,0 +1,99 @@
+@startuml ExpenseRepository
+title L4 — ExpenseRepository (Data Access)
+
+package "TripSplit.BusinessLogic" {
+    interface IExpenseRepository {
+        + GetByIdAsync(id: Guid): Task<Expense>
+        + GetByTripAsync(tripId: Guid): Task<IReadOnlyList<Expense>>
+        + AddAsync(expense: Expense): Task
+        + UpdateAsync(expense: Expense): Task
+        + DeleteAsync(id: Guid): Task
+    }
+
+    class Expense <<System Entity>> {
+        + Id: Guid
+        + Name: string
+        + Value: decimal
+        + Discount: decimal
+        + Type: ExpenseType
+        + PayerId: Guid
+        + ConsumerIds: IReadOnlyList<Guid>
+        + ReceiptId: Guid?
+    }
+
+    enum ExpenseType {
+        Food
+        Transport
+        Accommodation
+        Other
+    }
+}
+
+package "TripSplit.Contracts" {
+    class ExpenseDto <<Transport>> {
+        + Id: Guid
+        + Name: string
+        + Value: decimal
+        + Discount: decimal
+        + Type: string
+        + PayerId: Guid
+        + ConsumerIds: Guid[]
+        + ReceiptId: Guid?
+    }
+}
+
+package "TripSplit.DataAccess" {
+    class ExpenseRepository <<Repository>> {
+        - _db: AppDbContext
+        + ExpenseRepository(db: AppDbContext)
+        + GetByIdAsync(id): Task<Expense>
+        + GetByTripAsync(tripId): Task<IReadOnlyList<Expense>>
+        + AddAsync(expense): Task
+        + UpdateAsync(expense): Task
+        + DeleteAsync(id): Task
+    }
+
+    class AppDbContext {
+        + Expenses: DbSet<ExpenseEntity>
+        + Trips: DbSet<TripEntity>
+        + Users: DbSet<UserEntity>
+        + Receipts: DbSet<ReceiptEntity>
+    }
+
+    class ExpenseEntity <<DB Entity>> {
+        + Id: Guid
+        + Name: string
+        + Value: decimal
+        + Discount: decimal
+        + Type: int
+        + PayerId: Guid
+        + Payer: UserEntity
+        + ReceiptId: Guid?
+        + Consumers: ICollection<UserEntity>
+    }
+
+    class ExpenseMapper <<Static>> {
+        + {static} ToDomain(entity): Expense
+        + {static} ToEntity(domain): ExpenseEntity
+        + {static} ToDto(domain): ExpenseDto
+        + {static} FromDto(dto): Expense
+    }
+}
+
+ExpenseRepository ..|> IExpenseRepository
+ExpenseRepository --> AppDbContext
+ExpenseRepository ..> ExpenseMapper : uses
+AppDbContext "1" *-- "*" ExpenseEntity
+ExpenseMapper ..> ExpenseEntity
+ExpenseMapper ..> Expense
+ExpenseMapper ..> ExpenseDto
+Expense --> ExpenseType
+
+note top of IExpenseRepository
+  Интерфейс живёт в BusinessLogic.
+  DataAccess зависит от абстракции 
+  из BusinessLogic, а не наоборот — 
+  Dependency Inversion.
+end note
+
+@enduml

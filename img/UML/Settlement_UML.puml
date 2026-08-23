@@ -1,0 +1,30 @@
+@startuml Sequence_Settlement
+title Завершение поездки и расчёт долгов
+
+actor "Участник" as U
+participant "Frontend" as F
+participant "Backend" as B
+database "PostgreSQL" as DB
+
+U -> F : Нажать «Закончить поездку»
+F -> B : POST /trips/{id}/settle
+
+B -> DB : SELECT expenses WHERE tripId
+DB --> B : expenses[]
+
+B -> B : Рассчитать баланс\nкаждого участника
+B -> B : Построить граф долгов
+B -> B : Минимизировать переводы\n(GreedyStrategy)
+
+alt Проверка пройдена (суммы сходятся)
+    B -> DB : UPDATE trip SET status=Finished
+    B -> DB : INSERT transfers[]
+    DB --> B : ok
+    B --> F : { transfers[] }
+    F --> U : Кто кому сколько должен
+else Проверка не пройдена
+    B --> F : 500 { error: "Balance mismatch" }
+    F --> U : Ошибка расчёта
+end
+
+@enduml

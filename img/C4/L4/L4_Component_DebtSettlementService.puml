@@ -1,0 +1,90 @@
+@startuml DebtSettlementService
+title L4 — DebtSettlementService (Business Logic)
+
+package "TripSplit.BusinessLogic" {
+    interface IDebtSettlementService {
+        + CalculateSettlementAsync(tripId: Guid): Task<TripStatistics>
+    }
+
+    interface IDebtMinimizationStrategy {
+        + Minimize(balances: IReadOnlyDictionary<Guid, decimal>): IReadOnlyList<Transfer>
+    }
+
+    interface ITripRepository {
+        + GetByIdAsync(id: Guid): Task<Trip>
+    }
+    interface IExpenseRepository {
+        + GetByTripAsync(tripId: Guid): Task<IReadOnlyList<Expense>>
+    }
+
+    class DebtSettlementService {
+        - _trips: ITripRepository
+        - _expenses: IExpenseRepository
+        - _strategy: IDebtMinimizationStrategy
+        + DebtSettlementService(trips, expenses, strategy)
+        + CalculateSettlementAsync(tripId): Task<TripStatistics>
+        - ComputeBalances(expenses): IReadOnlyDictionary<Guid, decimal>
+    }
+
+    class GreedyDebtMinimizationStrategy {
+        + Minimize(balances): IReadOnlyList<Transfer>
+    }
+
+    class Transfer <<System Entity>> {
+        + FromUserId: Guid
+        + ToUserId: Guid
+        + Amount: decimal
+    }
+
+    class TripStatistics <<System Entity>> {
+        + TripId: Guid
+        + TotalSpent: decimal
+        + PerUserSpent: IReadOnlyDictionary<Guid, decimal>
+        + Transfers: IReadOnlyList<Transfer>
+    }
+
+    class Trip <<System Entity>>
+    class Expense <<System Entity>>
+}
+
+package "TripSplit.Contracts" {
+    class TransferDto <<Transport>> {
+        + FromUserId: Guid
+        + ToUserId: Guid
+        + Amount: decimal
+    }
+    class TripStatisticsDto <<Transport>> {
+        + TripId: Guid
+        + TotalSpent: decimal
+        + PerUserSpent: Dictionary<Guid, decimal>
+        + Transfers: TransferDto[]
+    }
+}
+
+DebtSettlementService ..|> IDebtSettlementService
+GreedyDebtMinimizationStrategy ..|> IDebtMinimizationStrategy
+
+DebtSettlementService --> ITripRepository
+DebtSettlementService --> IExpenseRepository
+DebtSettlementService --> IDebtMinimizationStrategy
+DebtSettlementService ..> Trip : reads
+DebtSettlementService ..> Expense : reads
+DebtSettlementService ..> Transfer : creates
+DebtSettlementService ..> TripStatistics : builds
+
+TripStatistics "1" *-- "*" Transfer
+TripStatisticsDto "1" *-- "*" TransferDto
+
+note top of IDebtMinimizationStrategy
+  Strategy + DI: сервис не знает, 
+  какой алгоритм используется. 
+  Greedy можно заменить на MinCostFlow 
+  без правок сервиса (OCP).
+end note
+
+note bottom of DebtSettlementService
+  Зависит только от интерфейсов —
+  DIP в чистом виде.
+end note
+
+@enduml
