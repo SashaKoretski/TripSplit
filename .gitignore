@@ -1,0 +1,26 @@
+# Visual Studio
+.vs/
+**/.vs/
+
+# Build
+bin/
+obj/
+**/bin/
+**/obj/
+
+# Tests
+TestResults/
+**/TestResults/
+
+# User-specific Visual Studio files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.cache

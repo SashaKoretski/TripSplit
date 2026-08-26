@@ -11,7 +11,7 @@ package "TripSplit.BusinessLogic" {
     }
 
     interface ITripRepository {
-        + GetByIdAsync(id: Guid): Task<Trip>
+        + GetByIdAsync(id: Guid): Task<Trip?>
     }
     interface IExpenseRepository {
         + GetByTripAsync(tripId: Guid): Task<IReadOnlyList<Expense>>
@@ -23,7 +23,8 @@ package "TripSplit.BusinessLogic" {
         - _strategy: IDebtMinimizationStrategy
         + DebtSettlementService(trips, expenses, strategy)
         + CalculateSettlementAsync(tripId): Task<TripStatistics>
-        - ComputeBalances(expenses): IReadOnlyDictionary<Guid, decimal>
+        - {static} ComputePerUserSpent(expenses): IReadOnlyDictionary<Guid, decimal>
+        - {static} ComputeBalances(expenses): IReadOnlyDictionary<Guid, decimal>
     }
 
     class GreedyDebtMinimizationStrategy {
@@ -47,7 +48,7 @@ package "TripSplit.BusinessLogic" {
     class Expense <<System Entity>>
 }
 
-package "TripSplit.Contracts" {
+package "TripSplit.Contracts" <<planned>> {
     class TransferDto <<Transport>> {
         + FromUserId: Guid
         + ToUserId: Guid
@@ -75,16 +76,5 @@ DebtSettlementService ..> TripStatistics : builds
 TripStatistics "1" *-- "*" Transfer
 TripStatisticsDto "1" *-- "*" TransferDto
 
-note top of IDebtMinimizationStrategy
-  Strategy + DI: сервис не знает, 
-  какой алгоритм используется. 
-  Greedy можно заменить на MinCostFlow 
-  без правок сервиса (OCP).
-end note
-
-note bottom of DebtSettlementService
-  Зависит только от интерфейсов —
-  DIP в чистом виде.
-end note
 
 @enduml
