@@ -1,99 +1,129 @@
 @startuml ExpenseRepository
-title L4 — ExpenseRepository (Data Access)
+title L4 — ExpenseRepository (Data Access, Npgsql / ADO.NET)
 
-package "TripSplit.BusinessLogic" {
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam nodesep 30
+skinparam ranksep 45
+
+package "TripSplit.BusinessLogic" as BL {
     interface IExpenseRepository {
-        + GetByIdAsync(id: Guid): Task<Expense>
-        + GetByTripAsync(tripId: Guid): Task<IReadOnlyList<Expense>>
-        + AddAsync(expense: Expense): Task
-        + UpdateAsync(expense: Expense): Task
-        + DeleteAsync(id: Guid): Task
-    }
-
-    class Expense <<System Entity>> {
-        + Id: Guid
-        + Name: string
-        + Value: decimal
-        + Discount: decimal
-        + Type: ExpenseType
-        + PayerId: Guid
-        + ConsumerIds: IReadOnlyList<Guid>
-        + ReceiptId: Guid?
-    }
-
-    enum ExpenseType {
-        Food
-        Transport
-        Accommodation
-        Other
-    }
-}
-
-package "TripSplit.Contracts" {
-    class ExpenseDto <<Transport>> {
-        + Id: Guid
-        + Name: string
-        + Value: decimal
-        + Discount: decimal
-        + Type: string
-        + PayerId: Guid
-        + ConsumerIds: Guid[]
-        + ReceiptId: Guid?
-    }
-}
-
-package "TripSplit.DataAccess" {
-    class ExpenseRepository <<Repository>> {
-        - _db: AppDbContext
-        + ExpenseRepository(db: AppDbContext)
-        + GetByIdAsync(id): Task<Expense>
+        + GetByIdAsync(id): Task<Expense?>
         + GetByTripAsync(tripId): Task<IReadOnlyList<Expense>>
         + AddAsync(expense): Task
         + UpdateAsync(expense): Task
         + DeleteAsync(id): Task
     }
 
-    class AppDbContext {
-        + Expenses: DbSet<ExpenseEntity>
-        + Trips: DbSet<TripEntity>
-        + Users: DbSet<UserEntity>
-        + Receipts: DbSet<ReceiptEntity>
-    }
-
-    class ExpenseEntity <<DB Entity>> {
-        + Id: Guid
-        + Name: string
-        + Value: decimal
-        + Discount: decimal
-        + Type: int
-        + PayerId: Guid
-        + Payer: UserEntity
+    class Expense <<Domain Entity>> {
+        + Id, TripId, PayerId: Guid
         + ReceiptId: Guid?
-        + Consumers: ICollection<UserEntity>
+        + Name: string
+        + Type: ExpenseType
+        + Value, Discount: decimal
+        + ConsumerIds: List<Guid>
     }
 
-    class ExpenseMapper <<Static>> {
-        + {static} ToDomain(entity): Expense
-        + {static} ToEntity(domain): ExpenseEntity
-        + {static} ToDto(domain): ExpenseDto
-        + {static} FromDto(dto): Expense
+    enum ExpenseType {
+        Food
+        Transport
+        Accommodation
+        Entertainment
+        Other
+    }
+
+    Expense --> ExpenseType
+}
+
+package "TripSplit.DataAccess" as DA {
+
+    package "Repositories" as REP {
+        class ExpenseRepository <<Repository>> {
+            - _factory: IDbConnectionFactory
+            + ExpenseRepository(factory)
+            + GetByIdAsync(id): Task<Expense?>
+            + GetByTripAsync(tripId): Task<IReadOnlyList<Expense>>
+            + AddAsync(expense): Task
+            + UpdateAsync(expense): Task
+            + DeleteAsync(id): Task
+            - LoadRowAsync(...)
+            - LoadConsumersAsync(...)
+            - ReplaceConsumersAsync(...)
+        }
+    }
+
+    package "Mapping" as MAP {
+        class ExpenseMapper <<Static>> {
+            + {static} Columns: string
+            + {static} ReadRow(reader): Row
+            + {static} ToDomain(row, consumers): Expense
+            + {static} ToDbType(type): string
+        }
+        class "Row" as ExpenseRow <<record struct>> {
+            + Id, TripId, PayerId: Guid
+            + ReceiptId: Guid?
+            + Name: string
+            + Type: ExpenseType
+            + Value, Discount: decimal
+        }
+        ExpenseMapper ..> ExpenseRow : builds
+    }
+
+    package "Infrastructure" as INF {
+        interface IDbConnectionFactory {
+            + OpenAsync(ct): Task<DbConnection>
+        }
+
+        class NpgsqlConnectionFactory <<PostgreSQL>> {
+            - _connectionString: string
+            + OpenAsync(ct): Task<DbConnection>
+        }
+
+        class DatabaseInitializer {
+            - _factory: IDbConnectionFactory
+            + InitializeAsync(ct): Task
+        }
+
+        NpgsqlConnectionFactory ..|> IDbConnectionFactory
+        DatabaseInitializer --> IDbConnectionFactory
+
+        package "Exceptions" as EXC {
+            class RepositoryException <<Exception>>
+            class EntityNotFoundException <<Exception>>
+            class DuplicateKeyException <<Exception>>
+            EntityNotFoundException --|> RepositoryException
+            DuplicateKeyException  --|> RepositoryException
+        }
     }
 }
 
-ExpenseRepository ..|> IExpenseRepository
-ExpenseRepository --> AppDbContext
-ExpenseRepository ..> ExpenseMapper : uses
-AppDbContext "1" *-- "*" ExpenseEntity
-ExpenseMapper ..> ExpenseEntity
-ExpenseMapper ..> Expense
-ExpenseMapper ..> ExpenseDto
-Expense --> ExpenseType
+package "Npgsql (внешний ADO.NET драйвер)" as NP <<External>> {
+    class NpgsqlConnection
+    class DbTransaction
+    class PostgresException <<Exception>> {
+        + SqlState: string
+    }
+}
 
-note top of IExpenseRepository
-  Интерфейс живёт в BusinessLogic.
-  DataAccess зависит от абстракции 
-  из BusinessLogic, а не наоборот — 
-  Dependency Inversion.
-end note
+' — реализация интерфейса из BusinessLogic (Dependency Inversion, SOLID)
+ExpenseRepository ..|> IExpenseRepository
+
+' — зависимости репозитория
+ExpenseRepository --> IDbConnectionFactory : depends on\n(DIP)
+ExpenseRepository ..> ExpenseMapper : uses
+ExpenseRepository ..> DbTransaction : opens tx\n(expenses + expense_consumers)
+ExpenseRepository ..> Expense : produces / consumes
+
+' — обработка ошибок Npgsql
+ExpenseRepository ..> PostgresException : catches
+ExpenseRepository ..> DuplicateKeyException : throws (23505)
+ExpenseRepository ..> EntityNotFoundException : throws (rows=0)
+ExpenseRepository ..> RepositoryException : throws (other)
+
+' — фабрика создаёт реальные подключения драйвера
+NpgsqlConnectionFactory ..> NpgsqlConnection : creates
+
+' — маппер собирает Expense
+ExpenseMapper ..> Expense : builds
 
 @enduml
