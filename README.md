@@ -57,11 +57,23 @@ TripSplit реализуется как многостраничное веб-п
 ### L3 — Компоненты Backend
 ![L3 Backend](img/C4/L1-L3/L3_Backend.png)
 
+### L3 — Компоненты Console UI (Technological UI)
+![L3 ConsoleUI](img/C4/L1-L3/L3_ConsoleUI.png)
+
+### L3 — Компоненты Business Logic
+![L3 BusinessLogic](img/C4/L1-L3/L3_BusinessLogic.png)
+
+### L3 — Компоненты Data Access
+![L3 DataAccess](img/C4/L1-L3/L3_DataAccess.png)
+
 ### L4 — Диаграмма классов ExpenseRepository (компонент доступа к данным)
 ![L4 ExpenseRepository](img/C4/L4/L4_Component_ExpenseRepository.png)
 
 ### L4 — Диаграмма классов DebtSettlementService (компонент бизнес-логики)
 ![L4 DebtSettlementService](img/C4/L4/L4_Component_DebtSettlementService.png)
+
+### L4 — Диаграмма классов Console UI (технологический UI)
+![L4 ConsoleUI](img/C4/L4/L4_Component_ConsoleUI.png)
 
 ## Диаграммы последовательностей (UML)
 

@@ -1,0 +1,128 @@
+@startuml ConsoleUI
+title L4 — Technological UI (Console Application)
+
+package "TripSplit.ConsoleUI" {
+
+    interface IMenuItem {
+        + Title: string
+        + IsAvailable(session: IAppSession): bool
+        + ExecuteAsync(): Task
+    }
+
+    interface IAppSession {
+        + CurrentUser: User?
+        + CurrentTrip: Trip?
+        + IsAuthenticated: bool
+        + HasActiveTrip: bool
+    }
+
+    interface IConsoleIO {
+        + Write(text: string)
+        + WriteLine(text: string)
+        + ReadLine(prompt: string): string
+    }
+
+    interface ISessionRefresher {
+        + RefreshAsync(): Task
+    }
+
+    class AppSession
+    class ConsoleIO
+    class TripSessionRefresher {
+        + RefreshAsync(): Task
+        - PrintFinalReportAsync(trip): Task
+    }
+
+    class MenuRunner {
+        - _items: IReadOnlyList<IMenuItem>
+        - _io: IConsoleIO
+        - _session: IAppSession
+        - _refresher: ISessionRefresher
+        + RunAsync(): Task
+    }
+
+    class Program <<entry point>> {
+        + Main(): Task
+    }
+
+    package "Commands (Use Cases)" {
+        class LoginCommand
+        class CreateTripCommand
+        class JoinTripCommand
+        class SelectTripCommand
+        class InviteParticipantCommand
+        class ViewExpensesCommand
+        class ViewStatisticsCommand
+        class ViewDebtsCommand
+        class AddExpenseCommand
+        class DeleteExpenseCommand
+        class AddReceiptCommand
+        class FinishTripCommand
+    }
+}
+
+package "TripSplit.BusinessLogic" <<library>> {
+    interface IUserService
+    interface ITripService
+    interface IExpenseService
+    interface IReceiptService
+    interface IDebtSettlementService
+}
+
+' Реализации инфраструктуры UI
+AppSession           ..|> IAppSession
+ConsoleIO            ..|> IConsoleIO
+TripSessionRefresher ..|> ISessionRefresher
+
+' Все команды реализуют IMenuItem — полиморфизм
+LoginCommand              ..|> IMenuItem
+CreateTripCommand         ..|> IMenuItem
+JoinTripCommand           ..|> IMenuItem
+SelectTripCommand         ..|> IMenuItem
+InviteParticipantCommand  ..|> IMenuItem
+ViewExpensesCommand       ..|> IMenuItem
+ViewStatisticsCommand     ..|> IMenuItem
+ViewDebtsCommand          ..|> IMenuItem
+AddExpenseCommand         ..|> IMenuItem
+DeleteExpenseCommand      ..|> IMenuItem
+AddReceiptCommand         ..|> IMenuItem
+FinishTripCommand         ..|> IMenuItem
+
+' Раннер работает только через абстракции
+MenuRunner --> IMenuItem : итерирует
+MenuRunner --> IConsoleIO
+MenuRunner --> IAppSession
+MenuRunner --> ISessionRefresher
+
+' Composition root
+Program --> MenuRunner : создаёт через DI
+
+' Зависимости команд на сервисы бизнес-логики (через интерфейсы — DIP)
+LoginCommand              --> IUserService
+CreateTripCommand         --> ITripService
+JoinTripCommand           --> ITripService
+SelectTripCommand         --> ITripService
+InviteParticipantCommand  --> ITripService
+InviteParticipantCommand  --> IUserService
+ViewExpensesCommand       --> IExpenseService
+ViewExpensesCommand       --> IUserService
+ViewStatisticsCommand     --> IDebtSettlementService
+ViewStatisticsCommand     --> IUserService
+ViewDebtsCommand          --> IDebtSettlementService
+ViewDebtsCommand          --> IUserService
+AddExpenseCommand         --> ITripService
+AddExpenseCommand         --> IExpenseService
+AddExpenseCommand         --> IReceiptService
+AddExpenseCommand         --> IUserService
+DeleteExpenseCommand      --> IExpenseService
+AddReceiptCommand         --> IReceiptService
+AddReceiptCommand         --> IExpenseService
+FinishTripCommand         --> ITripService
+
+TripSessionRefresher --> ITripService
+TripSessionRefresher --> IDebtSettlementService
+TripSessionRefresher --> IUserService
+TripSessionRefresher --> IAppSession
+TripSessionRefresher --> IConsoleIO
+
+@enduml

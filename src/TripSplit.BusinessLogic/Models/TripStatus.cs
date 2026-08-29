@@ -1,6 +1,6 @@
 namespace TripSplit.BusinessLogic.Models;
 
-// Состояние поездки: активная (можно менять траты) или завершённая (только чтение)
+// Состояние поездки
 public enum TripStatus
 {
     Active,
