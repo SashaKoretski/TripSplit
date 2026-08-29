@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TripSplit.DataAccess.Tests"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TripSplit.ConsoleUI", "TripSplit.ConsoleUI\TripSplit.ConsoleUI.csproj", "{7C965506-7E3E-4581-81B8-D7B6CC4B77B0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TripSplit.Logger", "TripSplit.Logger\TripSplit.Logger.csproj", "{2C43DFD8-71DD-4E2E-ABBF-447885ECC9C0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -83,6 +85,18 @@ Global
 		{7C965506-7E3E-4581-81B8-D7B6CC4B77B0}.Release|x64.Build.0 = Release|Any CPU
 		{7C965506-7E3E-4581-81B8-D7B6CC4B77B0}.Release|x86.ActiveCfg = Release|Any CPU
 		{7C965506-7E3E-4581-81B8-D7B6CC4B77B0}.Release|x86.Build.0 = Release|Any CPU
+		{2C43DFD8-71DD-4E2E-ABBF-447885ECC9C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C43DFD8-71DD-4E2E-ABBF-447885ECC9C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C43DFD8-71DD-4E2E-ABBF-447885ECC9C0}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2C43DFD8-71DD-4E2E-ABBF-447885ECC9C0}.Debug|x64.Build.0 = Debug|Any CPU
+		{2C43DFD8-71DD-4E2E-ABBF-447885ECC9C0}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2C43DFD8-71DD-4E2E-ABBF-447885ECC9C0}.Debug|x86.Build.0 = Debug|Any CPU
+		{2C43DFD8-71DD-4E2E-ABBF-447885ECC9C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C43DFD8-71DD-4E2E-ABBF-447885ECC9C0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2C43DFD8-71DD-4E2E-ABBF-447885ECC9C0}.Release|x64.ActiveCfg = Release|Any CPU
+		{2C43DFD8-71DD-4E2E-ABBF-447885ECC9C0}.Release|x64.Build.0 = Release|Any CPU
+		{2C43DFD8-71DD-4E2E-ABBF-447885ECC9C0}.Release|x86.ActiveCfg = Release|Any CPU
+		{2C43DFD8-71DD-4E2E-ABBF-447885ECC9C0}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

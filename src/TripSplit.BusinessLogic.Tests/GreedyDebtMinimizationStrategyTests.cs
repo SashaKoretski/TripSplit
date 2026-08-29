@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using TripSplit.BusinessLogic.Configuration;
 using TripSplit.BusinessLogic.Models;
 using TripSplit.BusinessLogic.Services;
 
@@ -10,7 +11,8 @@ public class GreedyDebtMinimizationStrategyTests
     private GreedyDebtMinimizationStrategy _sut = null!;
 
     [TestInitialize]
-    public void Setup() => _sut = new GreedyDebtMinimizationStrategy();
+
+    public void Setup() => _sut = new GreedyDebtMinimizationStrategy( new DebtSettlementOptions { MinTransferAmount = 0.01m });
 
     [TestMethod]
     public void Minimize_Null_Throws() =>

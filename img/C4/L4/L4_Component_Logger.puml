@@ -1,0 +1,83 @@
+@startuml Logger
+title L4 — TripSplit.Logger (фасад над Serilog)
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam nodesep 30
+skinparam ranksep 45
+
+package "TripSplit.Logger" {
+
+    class LoggingExtensions <<Static>> {
+        + {static} AddTripSplitLogging(services: IServiceCollection, config: IConfiguration): IServiceCollection
+    }
+
+    class TripSplitLoggerFactory <<Static>> {
+        + {static} Create(config: IConfiguration): ILoggerFactory
+    }
+}
+
+package "Microsoft.Extensions.*" <<library>> {
+    interface IServiceCollection
+    interface IConfiguration
+    interface ILoggerFactory
+    interface "ILogger<T>" as ILoggerT
+    class LoggingBuilderExtensions <<Static>> {
+        + AddSerilog(logger, dispose): ILoggingBuilder
+    }
+}
+
+package "Serilog (external)" <<External>> {
+    class LoggerConfiguration {
+        + ReadFrom.Configuration(config)
+        + Enrich.FromLogContext()
+        + CreateLogger(): Logger
+    }
+    class Log <<Static>> {
+        + {static} Logger: ILogger
+        + {static} CloseAndFlush()
+    }
+    class SerilogLoggerFactory {
+        + SerilogLoggerFactory(logger, dispose)
+    }
+
+    package "Sinks" {
+        class ConsoleSink <<Sink>>
+        class FileSink <<Sink>>
+    }
+}
+
+package "appsettings.json" <<config>> {
+    class "Serilog section" as SerilogSection <<config>> {
+        MinimumLevel
+        WriteTo: [Console, File]
+        Enrich
+    }
+}
+
+package "logs/tripsplit-*.log" <<external>> {
+    class LogFile <<file, rolling daily>>
+}
+
+' Композиция расширения
+LoggingExtensions --> IServiceCollection : AddLogging
+LoggingExtensions --> IConfiguration     : ReadFrom.Configuration
+LoggingExtensions --> LoggerConfiguration: builds
+LoggingExtensions --> Log                : Log.Logger = ...
+LoggingExtensions --> LoggingBuilderExtensions : AddSerilog
+LoggingExtensions ..> ILoggerT           : provides via DI
+
+' Standalone-фабрика для сценариев без DI
+TripSplitLoggerFactory --> LoggerConfiguration : builds
+TripSplitLoggerFactory --> SerilogLoggerFactory: wraps
+TripSplitLoggerFactory ..> ILoggerFactory      : returns
+
+' Конфигурация читается из внешнего файла
+LoggerConfiguration ..> SerilogSection : reads
+
+' Sinks активируются согласно конфигурации
+LoggerConfiguration --> ConsoleSink : registers
+LoggerConfiguration --> FileSink    : registers
+FileSink            --> LogFile     : пишет структурированные события
+
+@enduml

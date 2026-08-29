@@ -27,14 +27,16 @@ workspace "TripSplit" "Учёт совместных расходов в пое�
             }
 
             consoleUi = container "Technological UI" "Консольное приложение для системного тестирования всех Use Case. Подключает BusinessLogic напрямую (in-process)." ".NET Console App, C#" {
-                program     = component "Program (Composition Root)" "Собирает DI-граф и запускает меню." "C#"
-                menuRunner  = component "MenuRunner" "Цикл: обновление сессии, отрисовка, полиморфный вызов IMenuItem." "C#"
-                commands    = component "Commands (IMenuItem)" "Login/Join/CreateTrip/Invite/View*/AddExpense/DeleteExpense/AddReceipt/FinishTrip — 1 класс на Use Case." "C# + DI"
-                appSession  = component "AppSession + TripSessionRefresher" "Текущий пользователь, активная поездка; синхронизация с БД перед каждой отрисовкой меню." "C#"
-                consoleIo   = component "ConsoleIO" "Абстракция ввода/вывода (DIP)." "C#"
+                program          = component "Program (Composition Root)" "Собирает DI-граф, читает конфигурацию, регистрирует логирование, запускает меню." "C#"
+                menuRunner       = component "MenuRunner" "Цикл: обновление сессии, отрисовка, полиморфный вызов IMenuItem." "C#"
+                commands         = component "Commands (IMenuItem)" "Login/Join/CreateTrip/Invite/View*/AddExpense/DeleteExpense/AddReceipt/FinishTrip — 1 класс на Use Case." "C# + DI"
+                commandDecorator = component "LoggingMenuItemDecorator" "Оборачивает IMenuItem: логирует действия пользователя и исключения (Decorator, OCP)." "C#"
+                appSession       = component "AppSession + TripSessionRefresher" "Текущий пользователь, активная поездка; синхронизация с БД перед каждой отрисовкой меню." "C#"
+                consoleIo        = component "ConsoleIO" "Абстракция ввода/вывода (DIP)." "C#"
 
                 program -> menuRunner "создаёт"
-                menuRunner -> commands "итерирует"
+                menuRunner -> commandDecorator "итерирует"
+                commandDecorator -> commands "делегирует"
                 menuRunner -> appSession "обновляет + читает"
                 menuRunner -> consoleIo "отрисовывает"
                 commands -> appSession "изменяют/читают"
@@ -47,9 +49,11 @@ workspace "TripSplit" "Учёт совместных расходов в пое�
                 receiptService    = component "ReceiptService" "Чеки и их метаданные." "C#"
                 userService       = component "UserService" "Работа с пользователями." "C#"
                 settlementService = component "DebtSettlementService" "Собирает траты, считает балансы, вызывает стратегию." "C#"
-                debtStrategy      = component "IDebtMinimizationStrategy (Greedy)" "Алгоритм минимизации переводов. Внедряется через DI (Strategy)." "C#"
+                debtStrategy      = component "IDebtMinimizationStrategy (Greedy)" "Алгоритм минимизации переводов. Параметризуется DebtSettlementOptions. Внедряется через DI (Strategy)." "C#"
+                settlementOptions = component "DebtSettlementOptions" "POCO с параметрами (MinTransferAmount). Заполняется из IConfiguration." "C# POCO"
 
                 settlementService -> debtStrategy "делегирует минимизацию"
+                debtStrategy -> settlementOptions "читает параметры"
             }
 
             dataAccess = container "Data Access" "Реализация I*Repository (интерфейсы объявлены в BusinessLogic) и подключения к БД." ".NET Class Library, C#" {
@@ -57,7 +61,7 @@ workspace "TripSplit" "Учёт совместных расходов в пое�
                 expenseRepo  = component "ExpenseRepository" "Доступ к данным трат." "C# + Npgsql"
                 receiptRepo  = component "ReceiptRepository" "Метаданные чеков." "C# + Npgsql"
                 userRepo     = component "UserRepository" "Доступ к данным пользователей." "C# + Npgsql"
-                connFactory  = component "NpgsqlConnectionFactory" "Фабрика подключений (IDbConnectionFactory)." "Npgsql"
+                connFactory  = component "NpgsqlConnectionFactory" "Фабрика подключений (IDbConnectionFactory). Строка подключения из IConfiguration." "Npgsql"
                 mappers      = component "Mappers" "Мэппинг Row ↔ доменные модели." "C#"
                 storageAdapt = component "FileStorageAdapter" "Загрузка/чтение файлов чеков." "MinIO SDK"
 
@@ -71,6 +75,17 @@ workspace "TripSplit" "Учёт совместных расходов в пое�
                 userRepo    -> mappers "использует"
             }
 
+            logger = container "Logging" "Фасад над Serilog: конфигурирует провайдер Microsoft.Extensions.Logging, чтобы остальные контейнеры зависели только от ILogger<T> из абстракций." ".NET Class Library, C# + Serilog" {
+                loggingExt      = component "LoggingExtensions" "Метод AddTripSplitLogging(services, config) — регистрирует Serilog как ILoggerProvider в DI." "C#"
+                loggerFactoryC  = component "TripSplitLoggerFactory" "Создаёт standalone ILoggerFactory для сценариев без DI (тесты, утилиты)." "C#"
+
+                loggingExt -> loggerFactoryC "может использовать"
+            }
+
+            configuration = container "Configuration" "Внешний файл с настройками: строка подключения к БД, параметры бизнес-логики, конфигурация Serilog." "appsettings.json" "Config"
+
+            logFiles = container "Log Files" "Rolling log-файлы: действия пользователя, исключения, диагностика. Ротация по дням." "Файловая система, logs/tripsplit-*.log" "Database"
+        
             database    = container "База данных" "Пользователи, поездки, траты, метаданные чеков." "PostgreSQL" "Database"
             fileStorage = container "Хранилище файлов" "Blob-хранилище для фото чеков." "MinIO (S3-совместимое)" "Database"
         }
@@ -90,6 +105,13 @@ workspace "TripSplit" "Учёт совместных расходов в пое�
         businessLogic -> dataAccess    "Через I*Repository (реализации в DA)"   "in-process"
         dataAccess    -> database      "Чтение/запись"                          "TCP/SQL"
         dataAccess    -> fileStorage   "Загрузка/чтение файлов"                 "S3 API"
+
+        # L2 — логирование и конфигурация
+        consoleUi -> logger        "Подключает через AddTripSplitLogging"  "in-process"
+        backend   -> logger        "Подключает через AddTripSplitLogging"  "in-process"
+        consoleUi -> configuration "Читает при старте"                     "file I/O"
+        backend   -> configuration "Читает при старте"                     "file I/O"
+        logger    -> logFiles      "Пишет структурированные события"       "Serilog File Sink"
 
         # L3 — component ↔ container / межконтейнерные вызовы компонентов
         apiClient   -> backend    "REST"          "HTTPS/JSON"
@@ -118,6 +140,14 @@ workspace "TripSplit" "Учёт совместных расходов в пое�
 
         connFactory  -> database    "TCP"
         storageAdapt -> fileStorage "S3 API"
+
+        # L3 — логирование и конфигурация на уровне компонентов
+        program          -> loggingExt       "AddTripSplitLogging(services, config)"
+        program          -> configuration    "ConfigurationBuilder.AddJsonFile"
+        program          -> settlementOptions "заполняет из IConfiguration"
+        commandDecorator -> loggingExt       "пишет действия пользователя и исключения"
+        loggingExt       -> logFiles         "Serilog File Sink"
+        connFactory      -> configuration    "GetConnectionString(\"Postgres\")"
     }
 
     views {
@@ -156,6 +186,11 @@ workspace "TripSplit" "Учёт совместных расходов в пое�
             autolayout lr
         }
 
+        component logger "L3_Logger" "Уровень 3 — Компоненты Logger" {
+            include *
+            autolayout lr
+        }
+
         styles {
             element "Person" {
                 shape person
@@ -178,6 +213,12 @@ workspace "TripSplit" "Учёт совместных расходов в пое�
                 shape webBrowser
                 background #438dd5
                 color #ffffff
+            }
+
+            element "Config" {
+                shape folder
+                background #f2c14e
+                color #000000
             }
 
             element "Container" {

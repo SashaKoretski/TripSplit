@@ -28,7 +28,13 @@ package "TripSplit.BusinessLogic" {
     }
 
     class GreedyDebtMinimizationStrategy {
+        - _epsilon: decimal
+        + GreedyDebtMinimizationStrategy(options: DebtSettlementOptions)
         + Minimize(balances): IReadOnlyList<Transfer>
+    }
+
+    class DebtSettlementOptions <<POCO / Options>> {
+        + MinTransferAmount: decimal
     }
 
     class Transfer <<System Entity>> {
@@ -46,6 +52,10 @@ package "TripSplit.BusinessLogic" {
 
     class Trip <<System Entity>>
     class Expense <<System Entity>>
+}
+
+package "appsettings.json" <<config>> {
+    class "DebtSettlement:MinTransferAmount" as ConfigKey <<config key>>
 }
 
 package "TripSplit.Contracts" <<planned>> {
@@ -73,8 +83,10 @@ DebtSettlementService ..> Expense : reads
 DebtSettlementService ..> Transfer : creates
 DebtSettlementService ..> TripStatistics : builds
 
+GreedyDebtMinimizationStrategy --> DebtSettlementOptions : injected via DI
+DebtSettlementOptions <.. ConfigKey : bound from IConfiguration\nby Composition Root
+
 TripStatistics "1" *-- "*" Transfer
 TripStatisticsDto "1" *-- "*" TransferDto
-
 
 @enduml

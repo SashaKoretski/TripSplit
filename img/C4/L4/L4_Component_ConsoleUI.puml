@@ -41,8 +41,18 @@ package "TripSplit.ConsoleUI" {
         + RunAsync(): Task
     }
 
+    class LoggingMenuItemDecorator <<Decorator>> {
+        - _inner: IMenuItem
+        - _session: IAppSession
+        - _logger: ILogger<LoggingMenuItemDecorator>
+        + Title: string
+        + IsAvailable(session): bool
+        + ExecuteAsync(): Task
+    }
+
     class Program <<entry point>> {
         + Main(): Task
+        - {static} RegisterMenuItem<T>(services)
     }
 
     package "Commands (Use Cases)" {
@@ -61,18 +71,40 @@ package "TripSplit.ConsoleUI" {
     }
 }
 
+package "TripSplit.Logger" <<library>> {
+    class LoggingExtensions <<Static>> {
+        + {static} AddTripSplitLogging(services, config): IServiceCollection
+    }
+}
+
+package "Microsoft.Extensions.*" <<library>> {
+    interface IServiceCollection
+    interface IConfiguration
+    interface "ILogger<T>" as ILoggerT
+}
+
+package "appsettings.json" <<config>> {
+    class AppConfig <<file>> {
+        ConnectionStrings:Postgres
+        DebtSettlement:MinTransferAmount
+        Serilog: { ... }
+    }
+}
+
 package "TripSplit.BusinessLogic" <<library>> {
     interface IUserService
     interface ITripService
     interface IExpenseService
     interface IReceiptService
     interface IDebtSettlementService
+    class DebtSettlementOptions <<POCO>>
 }
 
 ' Реализации инфраструктуры UI
-AppSession           ..|> IAppSession
-ConsoleIO            ..|> IConsoleIO
-TripSessionRefresher ..|> ISessionRefresher
+AppSession                ..|> IAppSession
+ConsoleIO                 ..|> IConsoleIO
+TripSessionRefresher      ..|> ISessionRefresher
+LoggingMenuItemDecorator  ..|> IMenuItem
 
 ' Все команды реализуют IMenuItem — полиморфизм
 LoginCommand              ..|> IMenuItem
@@ -88,14 +120,28 @@ DeleteExpenseCommand      ..|> IMenuItem
 AddReceiptCommand         ..|> IMenuItem
 FinishTripCommand         ..|> IMenuItem
 
-' Раннер работает только через абстракции
+' Раннер работает только через абстракции — итерирует IMenuItem
+' (фактически декораторы, обёрнутые в Program)
 MenuRunner --> IMenuItem : итерирует
 MenuRunner --> IConsoleIO
 MenuRunner --> IAppSession
 MenuRunner --> ISessionRefresher
 
-' Composition root
-Program --> MenuRunner : создаёт через DI
+' Декоратор оборачивает конкретную команду и пишет в лог
+LoggingMenuItemDecorator o--> IMenuItem : wraps
+LoggingMenuItemDecorator --> ILoggerT : uses
+
+' Composition root: конфигурация + логирование + DI + декораторы
+Program --> AppConfig               : ConfigurationBuilder.AddJsonFile
+Program --> IConfiguration          : builds
+Program --> LoggingExtensions       : AddTripSplitLogging
+Program --> IServiceCollection      : registers
+Program --> MenuRunner              : создаёт через DI
+Program --> LoggingMenuItemDecorator: оборачивает каждую команду
+Program --> DebtSettlementOptions   : заполняет из IConfiguration
+
+LoggingExtensions --> IServiceCollection : AddLogging
+LoggingExtensions --> IConfiguration     : ReadFrom.Configuration
 
 ' Зависимости команд на сервисы бизнес-логики (через интерфейсы — DIP)
 LoginCommand              --> IUserService
