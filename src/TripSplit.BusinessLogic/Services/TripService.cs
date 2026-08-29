@@ -16,7 +16,7 @@ public class TripService : ITripService
         _users = users ?? throw new ArgumentNullException(nameof(users));
     }
 
-    // Создаёт активную поездку и добавляет организатора первым участником
+    // Создает активную поездку и добавляет организатора первым участником
     public async Task<Trip> CreateAsync(string name, string currency, Guid organizerId)
     {
         if (organizerId == Guid.Empty)

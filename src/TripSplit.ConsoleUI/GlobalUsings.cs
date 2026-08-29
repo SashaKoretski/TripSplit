@@ -1,0 +1,10 @@
+global using System;
+global using System.Collections.Generic;
+global using System.Linq;
+global using System.Threading.Tasks;
+global using Microsoft.Extensions.DependencyInjection;
+global using TripSplit.BusinessLogic.Models;
+global using TripSplit.BusinessLogic.Interfaces.Services;
+global using TripSplit.ConsoleUI.IO;
+global using TripSplit.ConsoleUI.Session;
+global using TripSplit.ConsoleUI.Menu;
