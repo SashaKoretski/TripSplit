@@ -1,0 +1,24 @@
+@model LoginVm
+@{ ViewData["Title"] = "Вход"; }
+
+<div class="card narrow">
+    <h1>Вход в TripSplit</h1>
+    <p class="muted">Введите имя и email. Пользователь с новым email будет создан автоматически.</p>
+
+    <form asp-action="Login" method="post">
+        @Html.AntiForgeryToken()
+        <label>
+            <span>Имя</span>
+            <input asp-for="Name" type="text" autocomplete="name" />
+            <span asp-validation-for="Name" class="field-error"></span>
+        </label>
+        <label>
+            <span>Email</span>
+            <input asp-for="Email" type="email" autocomplete="email" />
+            <span asp-validation-for="Email" class="field-error"></span>
+        </label>
+        <div>
+            <button type="submit">Войти</button>
+        </div>
+    </form>
+</div>

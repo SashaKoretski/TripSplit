@@ -1,0 +1,58 @@
+@model ExpenseListVm
+@{ ViewData["Title"] = "Траты"; }
+
+<div class="card">
+    <h1>Траты — @Model.Trip.Name</h1>
+    <p class="muted">
+        Всего: <b>@Model.Total.ToString("F2") @Model.Trip.Currency</b> ·
+        Статус: <span class="status status-@Model.Trip.Status.ToString().ToLower()">@Model.Trip.Status</span>
+    </p>
+    @if (Model.Trip.Status == TripStatus.Active)
+    {
+        <p>
+            <a class="btn" asp-action="Create">Добавить трату</a>
+            <a class="btn btn-muted" asp-controller="Receipts" asp-action="Index">Чеки</a>
+        </p>
+    }
+
+    @if (Model.Expenses.Count == 0)
+    {
+        <p class="muted">Пока трат нет.</p>
+    }
+    else
+    {
+        <table>
+            <thead>
+                <tr>
+                    <th>Название</th><th>Тип</th>
+                    <th class="right">Сумма</th><th class="right">Скидка</th><th class="right">Итого</th>
+                    <th>Плательщик</th><th>Получатели</th><th></th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var row in Model.Expenses)
+            {
+                <tr>
+                    <td>@row.Expense.Name</td>
+                    <td>@row.Expense.Type</td>
+                    <td class="right">@row.Expense.Value.ToString("F2")</td>
+                    <td class="right">@row.Expense.Discount.ToString("F2")</td>
+                    <td class="right"><b>@row.Expense.EffectiveAmount.ToString("F2")</b></td>
+                    <td>@row.PayerName</td>
+                    <td>@string.Join(", ", row.ConsumerNames)</td>
+                    <td class="right">
+                        @if (Model.Trip.Status == TripStatus.Active)
+                        {
+                            <form asp-action="Delete" asp-route-id="@row.Expense.Id" method="post" class="inline"
+                                  onsubmit="return confirm('Удалить трату?');">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn-danger">×</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+</div>

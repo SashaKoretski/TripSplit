@@ -1,0 +1,183 @@
+@startuml WebUI
+title L4 — Web UI (ASP.NET Core MVC)
+
+package "TripSplit.WebUI" {
+
+    interface IWebAppSession {
+        + CurrentUserId: Guid?
+        + CurrentTripId: Guid?
+        + IsAuthenticated: bool
+        + HasActiveTrip: bool
+        + GetCurrentUserAsync(): Task<User?>
+        + GetCurrentTripAsync(): Task<Trip?>
+        + SignIn(userId)
+        + SignOut()
+        + SelectTrip(tripId)
+        + ClearTrip()
+    }
+
+    class WebAppSession {
+        - _http: IHttpContextAccessor
+        - _users: IUserService
+        - _trips: ITripService
+    }
+
+    class DomainExceptionFilter <<ExceptionFilter>> {
+        - _tempFactory: ITempDataDictionaryFactory
+        - _logger: ILogger<DomainExceptionFilter>
+        + OnException(context): void
+    }
+
+    abstract class TripAwareController {
+        # AppSession: IWebAppSession
+        # ResolveCurrentTripAsync(): Task<(Trip?, IActionResult?)>
+    }
+
+    package "Controllers (Use Cases)" {
+        class HomeController
+        class AccountController
+        class TripsController
+        class ExpensesController
+        class ReceiptsController
+        class SettlementController
+    }
+
+    package "ViewModels" {
+        class LoginVm
+        class CreateTripVm
+        class JoinTripVm
+        class InviteParticipantVm
+        class TripListVm
+        class TripDetailsVm
+        class CreateExpenseVm
+        class ExpenseListVm
+        class CreateReceiptVm
+        class ReceiptListVm
+        class SettlementVm
+    }
+
+    package "Views (Razor)" {
+        class "Shared/_Layout"     as VLayout
+        class "Account/Login"      as VLogin
+        class "Trips/Index"        as VTrips1
+        class "Trips/Details"      as VTrips2
+        class "Expenses/Index"     as VExp1
+        class "Expenses/Create"    as VExp2
+        class "Receipts/Index"     as VRec1
+        class "Receipts/Create"    as VRec2
+        class "Settlement/Index"   as VSet
+        class "Home/Error"         as VErr
+    }
+
+    class Program <<entry point>> {
+        + Main(): Task
+    }
+}
+
+package "TripSplit.Logger" <<library>> {
+    class LoggingExtensions <<Static>> {
+        + {static} AddTripSplitLogging(services, config): IServiceCollection
+    }
+}
+
+package "TripSplit.BusinessLogic" <<library>> {
+    interface IUserService
+    interface ITripService
+    interface IExpenseService
+    interface IReceiptService
+    interface IDebtSettlementService
+    class DebtSettlementOptions <<POCO>>
+}
+
+package "Microsoft.AspNetCore.*" <<library>> {
+    class Controller
+    interface IExceptionFilter
+    interface "ISession"                as ISession
+    interface "IHttpContextAccessor"    as IHCA
+    interface IServiceCollection
+    interface IConfiguration
+    interface "ILogger<T>"              as ILoggerT
+}
+
+package "appsettings.json" <<config>> {
+    class AppConfig <<file>> {
+        ConnectionStrings:Postgres
+        DebtSettlement:MinTransferAmount
+        Serilog: { ... }
+    }
+}
+
+' -- реализации абстракций (DIP)
+WebAppSession           ..|> IWebAppSession
+DomainExceptionFilter   ..|> IExceptionFilter
+TripAwareController     --|> Controller
+HomeController          --|> Controller
+AccountController       --|> Controller
+TripsController         --|> Controller
+ExpensesController      --|> TripAwareController
+ReceiptsController      --|> TripAwareController
+SettlementController    --|> TripAwareController
+
+' -- контроллеры работают только через интерфейсы (DIP)
+HomeController          --> IWebAppSession
+AccountController       --> IUserService
+AccountController       --> IWebAppSession
+TripsController         --> ITripService
+TripsController         --> IUserService
+TripsController         --> IWebAppSession
+ExpensesController      --> IExpenseService
+ExpensesController      --> IReceiptService
+ExpensesController      --> IUserService
+ReceiptsController      --> IReceiptService
+SettlementController    --> IDebtSettlementService
+SettlementController    --> IUserService
+
+TripAwareController     --> IWebAppSession
+
+' -- ViewModels: binding форм + данные для отрисовки
+AccountController       ..> LoginVm                : bind + render
+TripsController         ..> CreateTripVm           : bind
+TripsController         ..> JoinTripVm             : bind
+TripsController         ..> InviteParticipantVm    : bind
+TripsController         ..> TripListVm             : render
+TripsController         ..> TripDetailsVm          : render
+ExpensesController      ..> CreateExpenseVm        : bind
+ExpensesController      ..> ExpenseListVm          : render
+ReceiptsController      ..> CreateReceiptVm        : bind
+ReceiptsController      ..> ReceiptListVm          : render
+SettlementController    ..> SettlementVm           : render
+
+' -- controller → view (что рендерится)
+AccountController       ..> VLogin
+TripsController         ..> VTrips1
+TripsController         ..> VTrips2
+ExpensesController      ..> VExp1
+ExpensesController      ..> VExp2
+ReceiptsController      ..> VRec1
+ReceiptsController      ..> VRec2
+SettlementController    ..> VSet
+HomeController          ..> VErr
+
+' -- Layout читает сессию для шапки (текущий пользователь, активная поездка, статус)
+VLayout                 --> IWebAppSession
+
+' -- инфраструктура сессии
+WebAppSession           --> IHCA
+WebAppSession           --> ISession               : через IHttpContextAccessor
+WebAppSession           --> IUserService
+WebAppSession           --> ITripService
+
+DomainExceptionFilter   --> ILoggerT
+
+' -- Composition Root
+Program --> AppConfig                              : ConfigurationBuilder.AddJsonFile
+Program --> IConfiguration                         : builds
+Program --> LoggingExtensions                      : AddTripSplitLogging
+Program --> IServiceCollection                     : registers
+Program --> DomainExceptionFilter                  : as MVC global filter
+Program --> DebtSettlementOptions                  : заполняет из IConfiguration
+
+LoggingExtensions --> IServiceCollection : AddLogging
+LoggingExtensions --> IConfiguration     : ReadFrom.Configuration
+
+@enduml

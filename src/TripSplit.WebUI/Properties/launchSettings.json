@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "TripSplit.WebUI": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:7716;http://localhost:7717"
+    }
+  }
+}

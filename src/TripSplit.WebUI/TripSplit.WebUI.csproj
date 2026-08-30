@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>TripSplit.WebUI</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TripSplit.BusinessLogic\TripSplit.BusinessLogic.csproj" />
+    <ProjectReference Include="..\TripSplit.DataAccess\TripSplit.DataAccess.csproj" />
+    <ProjectReference Include="..\TripSplit.Logger\TripSplit.Logger.csproj" />
+  </ItemGroup>
+
+</Project>

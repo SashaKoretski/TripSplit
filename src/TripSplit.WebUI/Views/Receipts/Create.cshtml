@@ -1,0 +1,24 @@
+@model CreateReceiptVm
+@{ ViewData["Title"] = "Новый чек"; }
+
+<div class="card narrow">
+    <h1>Новый чек</h1>
+
+    <form asp-action="Create" method="post">
+        @Html.AntiForgeryToken()
+        <label>
+            <span>URL или описание</span>
+            <input asp-for="FileUrl" type="text" />
+            <span asp-validation-for="FileUrl" class="field-error"></span>
+        </label>
+        <label>
+            <span>Дата</span>
+            <input asp-for="Date" type="date" />
+            <span asp-validation-for="Date" class="field-error"></span>
+        </label>
+        <div>
+            <button type="submit">Сохранить</button>
+            <a class="btn btn-muted" asp-action="Index">Отмена</a>
+        </div>
+    </form>
+</div>
