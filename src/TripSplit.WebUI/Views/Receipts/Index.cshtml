@@ -1,0 +1,40 @@
+@model ReceiptListVm
+@{ ViewData["Title"] = "Чеки"; }
+
+<div class="card">
+    <h1>Чеки — @Model.Trip.Name</h1>
+    @if (Model.Trip.Status == TripStatus.Active)
+    {
+        <p><a class="btn" asp-action="Create">Добавить чек</a></p>
+    }
+
+    @if (Model.Receipts.Count == 0)
+    {
+        <p class="muted">Пока чеков нет.</p>
+    }
+    else
+    {
+        <table>
+            <thead><tr><th>Дата</th><th>URL</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var r in Model.Receipts)
+            {
+                <tr>
+                    <td>@r.Date.ToString("dd.MM.yyyy")</td>
+                    <td>@r.FileUrl</td>
+                    <td class="right">
+                        @if (Model.Trip.Status == TripStatus.Active)
+                        {
+                            <form asp-action="Delete" asp-route-id="@r.Id" method="post" class="inline"
+                                  onsubmit="return confirm('Удалить чек?');">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn-danger">×</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+</div>

@@ -1,0 +1,65 @@
+@model TripDetailsVm
+@{ ViewData["Title"] = Model.Trip.Name; }
+
+<div class="card">
+    <h1>@Model.Trip.Name</h1>
+    <p class="muted">
+        Валюта: <b>@Model.Trip.Currency</b> ·
+        Создана: @Model.Trip.CreatedAt.ToString("dd.MM.yyyy") ·
+        Статус: <span class="status status-@Model.Trip.Status.ToString().ToLower()">@Model.Trip.Status</span>
+    </p>
+    <p class="muted">ID поездки (можно отправить другим): <code>@Model.Trip.Id</code></p>
+
+    <div class="row">
+        @if (!Model.IsSelected)
+        {
+            <form asp-action="Select" asp-route-id="@Model.Trip.Id" method="post" class="inline">
+                @Html.AntiForgeryToken()
+                <button type="submit">Выбрать как текущую</button>
+            </form>
+        }
+        else
+        {
+            <form asp-action="Deselect" method="post" class="inline">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn-muted">Снять выбор</button>
+            </form>
+        }
+        @if (Model.Trip.Status == TripStatus.Active)
+        {
+            <form asp-action="Finish" asp-route-id="@Model.Trip.Id" method="post" class="inline"
+                  onsubmit="return confirm('Завершить поездку? После этого нельзя добавлять траты.');">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn-danger">Завершить поездку</button>
+            </form>
+        }
+    </div>
+</div>
+
+<div class="card">
+    <h2>Участники (@Model.Participants.Count)</h2>
+    <table>
+        <thead><tr><th>Имя</th><th>Email</th></tr></thead>
+        <tbody>
+        @foreach (var p in Model.Participants)
+        {
+            <tr><td>@p.Name</td><td class="muted">@p.Email</td></tr>
+        }
+        </tbody>
+    </table>
+
+    @if (Model.Trip.Status == TripStatus.Active)
+    {
+        <h3>Пригласить участника</h3>
+        <p class="muted">Приглашаемый должен уже быть зарегистрирован.</p>
+        <form asp-action="Invite" asp-route-id="@Model.Trip.Id" method="post">
+            @Html.AntiForgeryToken()
+            <label>
+                <span>Email</span>
+                <input asp-for="Invite.Email" type="email" />
+                <span asp-validation-for="Invite.Email" class="field-error"></span>
+            </label>
+            <div><button type="submit">Пригласить</button></div>
+        </form>
+    }
+</div>

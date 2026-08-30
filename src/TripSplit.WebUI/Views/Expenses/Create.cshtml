@@ -1,0 +1,76 @@
+@model CreateExpenseVm
+@{ ViewData["Title"] = "Новая трата"; }
+
+<div class="card">
+    <h1>Новая трата</h1>
+
+    <form asp-action="Create" method="post">
+        @Html.AntiForgeryToken()
+
+        <label>
+            <span>Название</span>
+            <input asp-for="Name" />
+            <span asp-validation-for="Name" class="field-error"></span>
+        </label>
+
+        <label>
+            <span>Категория</span>
+            <select asp-for="Type" asp-items="Html.GetEnumSelectList<ExpenseType>()"></select>
+        </label>
+
+        <div class="row">
+            <label>
+                <span>Сумма</span>
+                <input asp-for="Value" type="number" step="0.01" min="0.01" />
+                <span asp-validation-for="Value" class="field-error"></span>
+            </label>
+            <label>
+                <span>Скидка</span>
+                <input asp-for="Discount" type="number" step="0.01" min="0" value="0" />
+                <span asp-validation-for="Discount" class="field-error"></span>
+            </label>
+        </div>
+
+        <label>
+            <span>Плательщик</span>
+            <select asp-for="PayerId">
+                @foreach (var u in Model.Participants)
+                {
+                    <option value="@u.Id">@u.Name</option>
+                }
+            </select>
+            <span asp-validation-for="PayerId" class="field-error"></span>
+        </label>
+
+        <div>
+            <span>Получатели (кому куплено)</span>
+            <div class="row">
+                @foreach (var u in Model.Participants)
+                {
+                    <label class="inline" style="align-items:center;gap:6px;flex:0 0 auto">
+                        <input type="checkbox" name="ConsumerIds" value="@u.Id"
+                               checked="@(Model.ConsumerIds.Contains(u.Id) ? "checked" : null)" />
+                        <span>@u.Name</span>
+                    </label>
+                }
+            </div>
+            <span asp-validation-for="ConsumerIds" class="field-error"></span>
+        </div>
+
+        <label>
+            <span>Чек (опционально)</span>
+            <select asp-for="ReceiptId">
+                <option value="">— без чека —</option>
+                @foreach (var r in Model.Receipts)
+                {
+                    <option value="@r.Id">@r.Date.ToString("dd.MM.yyyy") — @r.FileUrl</option>
+                }
+            </select>
+        </label>
+
+        <div>
+            <button type="submit">Сохранить</button>
+            <a class="btn btn-muted" asp-action="Index">Отмена</a>
+        </div>
+    </form>
+</div>

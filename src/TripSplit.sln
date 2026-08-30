@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TripSplit.ConsoleUI", "Trip
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TripSplit.Logger", "TripSplit.Logger\TripSplit.Logger.csproj", "{2C43DFD8-71DD-4E2E-ABBF-447885ECC9C0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TripSplit.WebUI", "TripSplit.WebUI\TripSplit.WebUI.csproj", "{14034174-5698-4C58-8BE7-112D0BC7A992}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -97,6 +99,18 @@ Global
 		{2C43DFD8-71DD-4E2E-ABBF-447885ECC9C0}.Release|x64.Build.0 = Release|Any CPU
 		{2C43DFD8-71DD-4E2E-ABBF-447885ECC9C0}.Release|x86.ActiveCfg = Release|Any CPU
 		{2C43DFD8-71DD-4E2E-ABBF-447885ECC9C0}.Release|x86.Build.0 = Release|Any CPU
+		{14034174-5698-4C58-8BE7-112D0BC7A992}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{14034174-5698-4C58-8BE7-112D0BC7A992}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{14034174-5698-4C58-8BE7-112D0BC7A992}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{14034174-5698-4C58-8BE7-112D0BC7A992}.Debug|x64.Build.0 = Debug|Any CPU
+		{14034174-5698-4C58-8BE7-112D0BC7A992}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{14034174-5698-4C58-8BE7-112D0BC7A992}.Debug|x86.Build.0 = Debug|Any CPU
+		{14034174-5698-4C58-8BE7-112D0BC7A992}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{14034174-5698-4C58-8BE7-112D0BC7A992}.Release|Any CPU.Build.0 = Release|Any CPU
+		{14034174-5698-4C58-8BE7-112D0BC7A992}.Release|x64.ActiveCfg = Release|Any CPU
+		{14034174-5698-4C58-8BE7-112D0BC7A992}.Release|x64.Build.0 = Release|Any CPU
+		{14034174-5698-4C58-8BE7-112D0BC7A992}.Release|x86.ActiveCfg = Release|Any CPU
+		{14034174-5698-4C58-8BE7-112D0BC7A992}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

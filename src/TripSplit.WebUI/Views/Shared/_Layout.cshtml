@@ -1,0 +1,60 @@
+@inject IWebAppSession Session
+@{
+    var user = await Session.GetCurrentUserAsync();
+    var trip = await Session.GetCurrentTripAsync();
+}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] — TripSplit</title>
+    <link rel="stylesheet" href="~/site.css" />
+</head>
+<body>
+    <header class="app-header">
+        <a class="brand" asp-controller="Home" asp-action="Index">TripSplit</a>
+        <nav>
+            @if (user is not null)
+            {
+                <a asp-controller="Trips" asp-action="Index">Мои поездки</a>
+                @if (trip is not null)
+                {
+                    <a asp-controller="Expenses" asp-action="Index">Траты</a>
+                    <a asp-controller="Receipts" asp-action="Index">Чеки</a>
+                    <a asp-controller="Settlement" asp-action="Index">Расчет</a>
+                }
+            }
+        </nav>
+        <div class="user-bar">
+            @if (trip is not null)
+            {
+                <span class="trip-badge">
+                    Поездка: <b>@trip.Name</b>
+                    <span class="status status-@trip.Status.ToString().ToLower()">@trip.Status</span>
+                </span>
+            }
+            @if (user is not null)
+            {
+                <span class="user-badge">@user.Name</span>
+                <form asp-controller="Account" asp-action="Logout" method="post" class="inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn-link">Выйти</button>
+                </form>
+            }
+        </div>
+    </header>
+
+    <main class="container">
+        @if (TempData["Error"] is string err)
+        {
+            <div class="alert alert-error">@err</div>
+        }
+        @if (TempData["Info"] is string info)
+        {
+            <div class="alert alert-info">@info</div>
+        }
+        @RenderBody()
+    </main>
+</body>
+</html>

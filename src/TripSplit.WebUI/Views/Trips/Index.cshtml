@@ -1,0 +1,77 @@
+@model TripListVm
+@{ ViewData["Title"] = "Мои поездки"; }
+
+<div class="card">
+    <h1>Мои поездки</h1>
+    @if (Model.Trips.Count == 0)
+    {
+        <p class="muted">Пока нет ни одной поездки. Создайте новую или войдите в существующую по ID.</p>
+    }
+    else
+    {
+        <table>
+            <thead>
+                <tr><th>Название</th><th>Валюта</th><th>Статус</th><th></th></tr>
+            </thead>
+            <tbody>
+            @foreach (var t in Model.Trips)
+            {
+                <tr>
+                    <td>
+                        <a asp-action="Details" asp-route-id="@t.Id">@t.Name</a>
+                        @if (Model.CurrentTripId == t.Id)
+                        {
+                            <span class="status status-active">выбрана</span>
+                        }
+                    </td>
+                    <td>@t.Currency</td>
+                    <td><span class="status status-@t.Status.ToString().ToLower()">@t.Status</span></td>
+                    <td class="right">
+                        @if (Model.CurrentTripId != t.Id)
+                        {
+                            <form asp-action="Select" asp-route-id="@t.Id" method="post" class="inline">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn-link">Выбрать</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+</div>
+
+<div class="row">
+    <div class="card">
+        <h2>Создать поездку</h2>
+        <form asp-action="Create" method="post">
+            @Html.AntiForgeryToken()
+            <label>
+                <span>Название</span>
+                <input asp-for="Create.Name" type="text" />
+                <span asp-validation-for="Create.Name" class="field-error"></span>
+            </label>
+            <label>
+                <span>Валюта (3 буквы)</span>
+                <input asp-for="Create.Currency" type="text" maxlength="3" style="text-transform:uppercase" />
+                <span asp-validation-for="Create.Currency" class="field-error"></span>
+            </label>
+            <div><button type="submit">Создать</button></div>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>Войти по ID поездки</h2>
+        <p class="muted">Если организатор скинул ID поездки, можно присоединиться напрямую.</p>
+        <form asp-action="Join" method="post">
+            @Html.AntiForgeryToken()
+            <label>
+                <span>ID поездки</span>
+                <input asp-for="Join.TripId" type="text" placeholder="00000000-0000-0000-0000-000000000000" />
+                <span asp-validation-for="Join.TripId" class="field-error"></span>
+            </label>
+            <div><button type="submit">Присоединиться</button></div>
+        </form>
+    </div>
+</div>

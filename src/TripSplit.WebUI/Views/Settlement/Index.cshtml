@@ -1,0 +1,55 @@
+@model SettlementVm
+@{ ViewData["Title"] = "Расчет"; }
+
+<div class="card">
+    <h1>Расчет — @Model.Trip.Name</h1>
+    <p class="muted">
+        Валюта: <b>@Model.Trip.Currency</b> ·
+        Статус: <span class="status status-@Model.Trip.Status.ToString().ToLower()">@Model.Trip.Status</span>
+    </p>
+    <p>Общая сумма трат: <b>@Model.Total.ToString("F2") @Model.Trip.Currency</b></p>
+</div>
+
+<div class="card">
+    <h2>Кто сколько потратил</h2>
+    @if (Model.PerUser.Count == 0)
+    {
+        <p class="muted">Нет данных.</p>
+    }
+    else
+    {
+        <table>
+            <thead><tr><th>Участник</th><th class="right">Сумма</th></tr></thead>
+            <tbody>
+            @foreach (var u in Model.PerUser)
+            {
+                <tr><td>@u.Name</td><td class="right">@u.Amount.ToString("F2") @Model.Trip.Currency</td></tr>
+            }
+            </tbody>
+        </table>
+    }
+</div>
+
+<div class="card">
+    <h2>Минимизированные переводы</h2>
+    @if (Model.Transfers.Count == 0)
+    {
+        <p class="muted">Все в расчете — переводы не нужны.</p>
+    }
+    else
+    {
+        <table>
+            <thead><tr><th>Кто платит</th><th>Кому</th><th class="right">Сумма</th></tr></thead>
+            <tbody>
+            @foreach (var t in Model.Transfers)
+            {
+                <tr>
+                    <td>@t.FromName</td>
+                    <td>@t.ToName</td>
+                    <td class="right"><b>@t.Amount.ToString("F2") @Model.Trip.Currency</b></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+</div>

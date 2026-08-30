@@ -50,7 +50,13 @@ TripSplit реализуется как многостраничное веб-п
 ```powershell
 dotnet build -c Release           # сборка всех компонентов
 dotnet test                       # тесты
+
 dotnet publish TripSplit.ConsoleUI -c Release -o publish   # публикация всех .dll в src\publish\
+
+# Web UI
+dotnet run --project TripSplit.WebUI
+# затем открыть URL http://localhost:7717
+
 ```
 
 Запуск напрямую из ОС — двойной клик по `src\publish\TripSplit.ConsoleUI.exe` (или `.\publish\TripSplit.ConsoleUI.exe` в PowerShell).
@@ -65,11 +71,11 @@ dotnet publish TripSplit.ConsoleUI -c Release -o publish   # публикаци�
 ### L2 — Контейнеры
 ![L2 Containers](img/C4/L1-L3/L2_Containers.png)
 
-### L3 — Компоненты Frontend
-![L3 Frontend](img/C4/L1-L3/L3_Frontend.png)
+### L4 — Диаграмма классов Web UI (пользовательский графический интерфейс)
+![L4 WebUI](img/C4/L4/L4_Component_WebUI.svg)
 
-### L3 — Компоненты Backend
-![L3 Backend](img/C4/L1-L3/L3_Backend.png)
+### L3 — Компоненты Web UI
+![L3 WebUI](img/C4/L1-L3/L3_WebUI.png)
 
 ### L3 — Компоненты Console UI (Technological UI)
 ![L3 ConsoleUI](img/C4/L1-L3/L3_ConsoleUI.png)
