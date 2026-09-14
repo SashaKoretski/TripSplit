@@ -53,6 +53,32 @@ public class UserServiceTests
         _users.Verify(r => r.AddAsync(It.IsAny<User>()), Times.Never);
     }
 
+    [TestMethod]
+    public async Task RegisterAsync_ExistingEmailDifferentGoogleId_ReturnsExistingWithoutAdding()
+    {
+        var existing = new User(Guid.NewGuid(), "Sasha", "sasha@example.com", "g-old");
+        _users.Setup(r => r.GetByGoogleIdAsync("g-new")).ReturnsAsync((User?)null);
+        _users.Setup(r => r.GetByEmailAsync("sasha@example.com")).ReturnsAsync(existing);
+
+        var user = await _sut.RegisterAsync("Masha", "sasha@example.com", "g-new");
+
+        Assert.AreSame(existing, user);
+        _users.Verify(r => r.AddAsync(It.IsAny<User>()), Times.Never);
+    }
+
+    [TestMethod]
+    public async Task RegisterAsync_ExistingEmailDifferentCase_ReturnsExistingWithoutAdding()
+    {
+        var existing = new User(Guid.NewGuid(), "Dan", "dan@example.com", "g-old");
+        _users.Setup(r => r.GetByGoogleIdAsync("g-new")).ReturnsAsync((User?)null);
+        _users.Setup(r => r.GetByEmailAsync("dan@example.com")).ReturnsAsync(existing);
+
+        var user = await _sut.RegisterAsync("Egor", "Dan@Example.com", "g-new");
+
+        Assert.AreSame(existing, user);
+        _users.Verify(r => r.AddAsync(It.IsAny<User>()), Times.Never);
+    }
+
     [DataTestMethod]
     [DataRow("", "e@e.com", "g")]
     [DataRow("  ", "e@e.com", "g")]
@@ -130,5 +156,37 @@ public class UserServiceTests
             () => _sut.FindByGoogleIdAsync(googleId));
 
         _users.Verify(r => r.GetByGoogleIdAsync(It.IsAny<string>()), Times.Never);
+    }
+
+    [TestMethod]
+    public async Task FindByEmailAsync_Existing_ReturnsUser()
+    {
+        var user = new User(Guid.NewGuid(), "Egor", "egor@example.com", "g-1");
+        _users.Setup(r => r.GetByEmailAsync("egor@example.com")).ReturnsAsync(user);
+
+        var result = await _sut.FindByEmailAsync("Egor@Example.com");
+
+        Assert.AreSame(user, result);
+    }
+
+    [TestMethod]
+    public async Task FindByEmailAsync_NotFound_ReturnsNull()
+    {
+        _users.Setup(r => r.GetByEmailAsync("missing@example.com")).ReturnsAsync((User?)null);
+
+        var result = await _sut.FindByEmailAsync("missing@example.com");
+
+        Assert.IsNull(result);
+    }
+
+    [DataTestMethod]
+    [DataRow("")]
+    [DataRow("   ")]
+    public async Task FindByEmailAsync_InvalidEmail_Throws(string email)
+    {
+        await Assert.ThrowsExceptionAsync<ArgumentException>(
+            () => _sut.FindByEmailAsync(email));
+
+        _users.Verify(r => r.GetByEmailAsync(It.IsAny<string>()), Times.Never);
     }
 }
