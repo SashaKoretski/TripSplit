@@ -1,24 +1,43 @@
-@model LoginVm
+@model AuthPageVm
 @{ ViewData["Title"] = "Вход"; }
 
-<div class="card narrow">
-    <h1>Вход в TripSplit</h1>
-    <p class="muted">Введите имя и email. Пользователь с новым email будет создан автоматически.</p>
+<div class="row">
+    <div class="card narrow">
+        <h1>Регистрация</h1>
+        <p class="muted">Создайте новый аккаунт, если ваш email еще не зерегистрирован.</p>
 
-    <form asp-action="Login" method="post">
-        @Html.AntiForgeryToken()
-        <label>
-            <span>Имя</span>
-            <input asp-for="Name" type="text" autocomplete="name" />
-            <span asp-validation-for="Name" class="field-error"></span>
-        </label>
-        <label>
-            <span>Email</span>
-            <input asp-for="Email" type="email" autocomplete="email" />
-            <span asp-validation-for="Email" class="field-error"></span>
-        </label>
-        <div>
-            <button type="submit">Войти</button>
-        </div>
-    </form>
+        <form asp-action="Register" method="post">
+            @Html.AntiForgeryToken()
+            <label>
+                <span>Имя</span>
+                <input asp-for="Register.Name" type="text" autocomplete="name" />
+                <span asp-validation-for="Register.Name" class="field-error"></span>
+            </label>
+            <label>
+                <span>Email</span>
+                <input asp-for="Register.Email" type="email" autocomplete="email" />
+                <span asp-validation-for="Register.Email" class="field-error"></span>
+            </label>
+            <div>
+                <button type="submit">Зарегистрироваться</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card narrow">
+        <h1>Вход по email</h1>
+        <p class="muted">Для уже зарегистрированных пользователей.</p>
+
+        <form asp-action="LoginByEmail" method="post">
+            @Html.AntiForgeryToken()
+            <label>
+                <span>Email</span>
+                <input asp-for="LoginByEmail.Email" type="email" autocomplete="email" />
+                <span asp-validation-for="LoginByEmail.Email" class="field-error"></span>
+            </label>
+            <div>
+                <button type="submit">Войти</button>
+            </div>
+        </form>
+    </div>
 </div>

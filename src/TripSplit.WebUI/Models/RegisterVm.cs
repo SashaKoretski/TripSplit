@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace TripSplit.WebUI.Models;
 
-public class LoginVm
+public class RegisterVm
 {
     [Required(ErrorMessage = "Имя обязательно")]
     public string Name { get; set; } = string.Empty;

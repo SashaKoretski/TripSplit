@@ -24,11 +24,17 @@ public class UserService : IUserService
         if (string.IsNullOrWhiteSpace(googleId))
             throw new ArgumentException("GoogleId is required", nameof(googleId));
 
-        var existing = await _users.GetByGoogleIdAsync(googleId);
-        if (existing is not null)
-            return existing;
+        var existingByGoogleId = await _users.GetByGoogleIdAsync(googleId);
+        if (existingByGoogleId is not null)
+            return existingByGoogleId;
 
-        var user = new User(Guid.NewGuid(), name, email, googleId);
+        // почта уже занята другим аккаунтом (иначе упадем на unique-constraint) — входим в него под сохраненным именем
+        var normalizedEmail = email.Trim().ToLowerInvariant();
+        var existingByEmail = await _users.GetByEmailAsync(normalizedEmail);
+        if (existingByEmail is not null)
+            return existingByEmail;
+
+        var user = new User(Guid.NewGuid(), name, normalizedEmail, googleId);
         await _users.AddAsync(user);
         return user;
     }
@@ -48,5 +54,13 @@ public class UserService : IUserService
             throw new ArgumentException("GoogleId is required", nameof(googleId));
 
         return await _users.GetByGoogleIdAsync(googleId);
+    }
+
+    public async Task<User?> FindByEmailAsync(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            throw new ArgumentException("Email is required", nameof(email));
+
+        return await _users.GetByEmailAsync(email.Trim().ToLowerInvariant());
     }
 }

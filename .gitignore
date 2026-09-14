@@ -24,3 +24,11 @@ TestResults/
 # Temporary files
 *.tmp
 *.cache
+
+# Publish output
+src/publish/
+*.dll
+*.exe
+*.pdb
+*.deps.json
+*.runtimeconfig.json
