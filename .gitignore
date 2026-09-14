@@ -25,14 +25,10 @@ TestResults/
 *.tmp
 *.cache
 
-# Publish output (binaries, should not be in remote repo)
+# Publish output
 src/publish/
 *.dll
 *.exe
 *.pdb
 *.deps.json
 *.runtimeconfig.json
-
-# AI assistant instructions/config (local only)
-CLAUDE.md
-.claude/
