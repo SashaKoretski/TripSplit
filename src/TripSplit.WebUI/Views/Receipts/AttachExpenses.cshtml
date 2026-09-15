@@ -1,0 +1,32 @@
+@model AttachExpensesVm
+@{ ViewData["Title"] = "Привязать траты"; }
+
+<div class="card">
+    <h1>Привязать траты — @Model.Receipt.Name</h1>
+    <p class="muted">@Model.Receipt.Date.ToString("dd.MM.yyyy")</p>
+
+    @if (Model.UnlinkedExpenses.Count == 0)
+    {
+        <p class="muted">Нет трат без чека — привязывать нечего.</p>
+        <p><a class="btn btn-muted" asp-action="Index">Назад к чекам</a></p>
+    }
+    else
+    {
+        <form asp-action="AttachExpenses" asp-route-receiptId="@Model.Receipt.Id" method="post">
+            @Html.AntiForgeryToken()
+            <div>
+                @foreach (var e in Model.UnlinkedExpenses)
+                {
+                    <label class="inline" style="align-items:center;gap:6px;flex:0 0 100%">
+                        <input type="checkbox" name="expenseIds" value="@e.Id" />
+                        <span>@e.Name — @e.EffectiveAmount.ToString("F2") @Model.Trip.Currency (@e.Type)</span>
+                    </label>
+                }
+            </div>
+            <div>
+                <button type="submit">Привязать выбранные</button>
+                <a class="btn btn-muted" asp-action="Index">Отмена</a>
+            </div>
+        </form>
+    }
+</div>

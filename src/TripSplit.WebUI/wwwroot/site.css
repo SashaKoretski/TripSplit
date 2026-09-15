@@ -107,6 +107,7 @@ th { background: var(--c-accent-soft); }
     margin-bottom: var(--gap);
 }
 .card.narrow { max-width: 420px; margin-left: auto; margin-right: auto; }
+.receipt-thumb { max-height: 48px; border-radius: var(--radius); vertical-align: middle; }
 .row { display: flex; gap: var(--gap); flex-wrap: wrap; }
 .row > * { flex: 1 1 240px; }
 .muted { color: var(--c-muted); }

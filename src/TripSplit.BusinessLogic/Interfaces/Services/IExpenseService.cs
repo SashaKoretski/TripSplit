@@ -19,4 +19,7 @@ public interface IExpenseService
     Task<IReadOnlyList<Expense>> GetByTripAsync(Guid tripId);
     Task UpdateAsync(Expense expense);
     Task DeleteAsync(Guid id);
+
+    // Привязывает существующую трату к чеку
+    Task AttachToReceiptAsync(Guid expenseId, Guid receiptId);
 }

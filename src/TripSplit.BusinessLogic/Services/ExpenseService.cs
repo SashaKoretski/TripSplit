@@ -109,6 +109,24 @@ public class ExpenseService : IExpenseService
         await _expenses.DeleteAsync(id);
     }
 
+    // Привязывает существующую трату к чеку той же поездки
+    public async Task AttachToReceiptAsync(Guid expenseId, Guid receiptId)
+    {
+        if (expenseId == Guid.Empty)
+            throw new ArgumentException("Expense id cannot be empty", nameof(expenseId));
+        if (receiptId == Guid.Empty)
+            throw new ArgumentException("Receipt id cannot be empty", nameof(receiptId));
+
+        var expense = await _expenses.GetByIdAsync(expenseId)
+            ?? throw new ExpenseNotFoundException(expenseId);
+
+        var updated = new Expense(
+            expense.Id, expense.TripId, expense.PayerId, expense.Name, expense.Type,
+            expense.Value, expense.Discount, expense.ConsumerIds, receiptId);
+
+        await UpdateAsync(updated);
+    }
+
     // Проверяет, что плательщик и все потребители — участники поездки
     private static void EnsureParticipants(Trip trip, Guid payerId, IReadOnlyCollection<Guid> consumerIds)
     {

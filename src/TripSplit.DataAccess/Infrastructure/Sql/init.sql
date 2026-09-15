@@ -29,8 +29,18 @@ CREATE INDEX IF NOT EXISTS idx_trip_participants_user_id ON trip_participants(us
 CREATE TABLE IF NOT EXISTS receipts (
     id       UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     trip_id  UUID NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
-    file_url VARCHAR(500) NOT NULL,
+    name     VARCHAR(200) NOT NULL,
     date     DATE NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS receipt_images (
+    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    receipt_id          UUID NOT NULL UNIQUE REFERENCES receipts(id) ON DELETE CASCADE,
+    storage_key         VARCHAR(500) NOT NULL,
+    content_type        VARCHAR(100) NOT NULL,
+    file_size_bytes     BIGINT       NOT NULL,
+    original_file_name  VARCHAR(255) NOT NULL,
+    uploaded_at         TIMESTAMPTZ  NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS expenses (

@@ -4,7 +4,7 @@
 <div class="card">
     <h1>Новая трата</h1>
 
-    <form asp-action="Create" method="post">
+    <form asp-action="Create" method="post" enctype="multipart/form-data">
         @Html.AntiForgeryToken()
 
         <label>
@@ -58,15 +58,33 @@
         </div>
 
         <label>
-            <span>Чек (опционально)</span>
+            <span>Существующий чек (опционально)</span>
             <select asp-for="ReceiptId">
                 <option value="">— без чека —</option>
                 @foreach (var r in Model.Receipts)
                 {
-                    <option value="@r.Id">@r.Date.ToString("dd.MM.yyyy") — @r.FileUrl</option>
+                    <option value="@r.Id">@r.Name — @r.Date.ToString("dd.MM.yyyy")</option>
                 }
             </select>
         </label>
+
+        <div class="card">
+            <span class="muted">...или загрузить новый чек фотографией</span>
+            <div class="row">
+                <label>
+                    <span>Название чека</span>
+                    <input asp-for="NewReceiptName" placeholder="По умолчанию — название траты" />
+                </label>
+                <label>
+                    <span>Дата чека</span>
+                    <input asp-for="NewReceiptDate" type="date" />
+                </label>
+            </div>
+            <label>
+                <span>Фото чека</span>
+                <input asp-for="NewReceiptFile" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" />
+            </label>
+        </div>
 
         <div>
             <button type="submit">Сохранить</button>

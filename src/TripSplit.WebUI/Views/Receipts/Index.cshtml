@@ -15,17 +15,60 @@
     else
     {
         <table>
-            <thead><tr><th>Дата</th><th>URL</th><th></th></tr></thead>
+            <thead><tr><th>Название</th><th>Дата</th><th>Фото</th><th>Траты</th><th></th></tr></thead>
             <tbody>
-            @foreach (var r in Model.Receipts)
+            @foreach (var row in Model.Receipts)
             {
                 <tr>
-                    <td>@r.Date.ToString("dd.MM.yyyy")</td>
-                    <td>@r.FileUrl</td>
+                    <td>@row.Receipt.Name</td>
+                    <td>@row.Receipt.Date.ToString("dd.MM.yyyy")</td>
+                    <td>
+                        @if (row.ImageUrl is not null)
+                        {
+                            <a href="@row.ImageUrl" target="_blank">
+                                <img src="@row.ImageUrl" alt="@row.ImageFileName" class="receipt-thumb" />
+                            </a>
+                            @if (Model.Trip.Status == TripStatus.Active)
+                            {
+                                <form asp-action="DeleteImage" asp-route-receiptId="@row.Receipt.Id" method="post" class="inline"
+                                      onsubmit="return confirm('Удалить фото чека?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn-link">удалить фото</button>
+                                </form>
+                            }
+                        }
+                        else if (Model.Trip.Status == TripStatus.Active)
+                        {
+                            <form asp-action="UploadImage" asp-route-receiptId="@row.Receipt.Id" method="post"
+                                  enctype="multipart/form-data" class="inline">
+                                @Html.AntiForgeryToken()
+                                <input type="file" name="file" accept="image/jpeg,image/png,image/webp,application/pdf" required />
+                                <button type="submit">Загрузить</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <span class="muted">нет фото</span>
+                        }
+                    </td>
+                    <td>
+                        @if (row.LinkedExpenses.Count == 0)
+                        {
+                            <span class="muted">нет трат</span>
+                        }
+                        else
+                        {
+                            @foreach (var e in row.LinkedExpenses)
+                            {
+                                <div>@e.Name — @e.EffectiveAmount.ToString("F2") @Model.Trip.Currency</div>
+                            }
+                        }
+                    </td>
                     <td class="right">
                         @if (Model.Trip.Status == TripStatus.Active)
                         {
-                            <form asp-action="Delete" asp-route-id="@r.Id" method="post" class="inline"
+                            <a class="btn-link" asp-action="AttachExpenses" asp-route-receiptId="@row.Receipt.Id">+ трата</a>
+                            <form asp-action="Delete" asp-route-id="@row.Receipt.Id" method="post" class="inline"
                                   onsubmit="return confirm('Удалить чек?');">
                                 @Html.AntiForgeryToken()
                                 <button type="submit" class="btn-danger">×</button>

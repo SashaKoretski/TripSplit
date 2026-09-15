@@ -1,6 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using TripSplit.BusinessLogic.Interfaces.Repositories;
+using TripSplit.BusinessLogic.Interfaces.Services;
 using TripSplit.BusinessLogic.Models;
 using TripSplit.BusinessLogic.Models.Exceptions;
 using TripSplit.BusinessLogic.Services;
@@ -12,6 +13,7 @@ public class ReceiptServiceTests
 {
     private Mock<IReceiptRepository> _receipts = null!;
     private Mock<ITripRepository> _trips = null!;
+    private Mock<IReceiptImageService> _images = null!;
     private ReceiptService _sut = null!;
 
     private static Trip MakeTrip(Guid? id = null, TripStatus status = TripStatus.Active)
@@ -22,14 +24,15 @@ public class ReceiptServiceTests
     }
 
     private static Receipt MakeReceipt(Guid? id = null, Guid? tripId = null) =>
-        new(id ?? Guid.NewGuid(), tripId ?? Guid.NewGuid(), "https://s3/x.jpg", new DateOnly(2026, 8, 25));
+        new(id ?? Guid.NewGuid(), tripId ?? Guid.NewGuid(), "Кафе", new DateOnly(2026, 8, 25));
 
     [TestInitialize]
     public void Setup()
     {
         _receipts = new Mock<IReceiptRepository>();
         _trips = new Mock<ITripRepository>();
-        _sut = new ReceiptService(_receipts.Object, _trips.Object);
+        _images = new Mock<IReceiptImageService>();
+        _sut = new ReceiptService(_receipts.Object, _trips.Object, _images.Object);
     }
 
     [TestMethod]
@@ -38,12 +41,11 @@ public class ReceiptServiceTests
         var trip = MakeTrip();
         _trips.Setup(r => r.GetByIdAsync(trip.Id)).ReturnsAsync(trip);
 
-        var receipt = await _sut.CreateAsync(trip.Id, "https://s3/x.jpg", new DateOnly(2026, 8, 25));
+        var receipt = await _sut.CreateAsync(trip.Id, "Кафе", new DateOnly(2026, 8, 25));
 
         Assert.IsNotNull(receipt);
         Assert.AreNotEqual(Guid.Empty, receipt.Id);
         Assert.AreEqual(trip.Id, receipt.TripId);
-        Assert.AreEqual("https://s3/x.jpg", receipt.FileUrl);
         _receipts.Verify(r => r.AddAsync(It.Is<Receipt>(x => x.Id == receipt.Id)), Times.Once);
     }
 
@@ -54,7 +56,7 @@ public class ReceiptServiceTests
         _trips.Setup(r => r.GetByIdAsync(tripId)).ReturnsAsync((Trip?)null);
 
         await Assert.ThrowsExceptionAsync<TripNotFoundException>(
-            () => _sut.CreateAsync(tripId, "https://s3/x.jpg", new DateOnly(2026, 8, 25)));
+            () => _sut.CreateAsync(tripId, "Кафе", new DateOnly(2026, 8, 25)));
 
         _receipts.Verify(r => r.AddAsync(It.IsAny<Receipt>()), Times.Never);
     }
@@ -66,7 +68,7 @@ public class ReceiptServiceTests
         _trips.Setup(r => r.GetByIdAsync(trip.Id)).ReturnsAsync(trip);
 
         await Assert.ThrowsExceptionAsync<TripAlreadyFinishedException>(
-            () => _sut.CreateAsync(trip.Id, "https://s3/x.jpg", new DateOnly(2026, 8, 25)));
+            () => _sut.CreateAsync(trip.Id, "Кафе", new DateOnly(2026, 8, 25)));
 
         _receipts.Verify(r => r.AddAsync(It.IsAny<Receipt>()), Times.Never);
     }
@@ -75,7 +77,7 @@ public class ReceiptServiceTests
     public async Task CreateAsync_EmptyTripId_Throws()
     {
         await Assert.ThrowsExceptionAsync<ArgumentException>(
-            () => _sut.CreateAsync(Guid.Empty, "https://s3/x.jpg", new DateOnly(2026, 8, 25)));
+            () => _sut.CreateAsync(Guid.Empty, "Кафе", new DateOnly(2026, 8, 25)));
 
         _trips.Verify(r => r.GetByIdAsync(It.IsAny<Guid>()), Times.Never);
     }
@@ -83,13 +85,13 @@ public class ReceiptServiceTests
     [DataTestMethod]
     [DataRow("")]
     [DataRow("   ")]
-    public async Task CreateAsync_InvalidFileUrl_Throws(string fileUrl)
+    public async Task CreateAsync_InvalidName_Throws(string name)
     {
         var trip = MakeTrip();
         _trips.Setup(r => r.GetByIdAsync(trip.Id)).ReturnsAsync(trip);
 
         await Assert.ThrowsExceptionAsync<ArgumentException>(
-            () => _sut.CreateAsync(trip.Id, fileUrl, new DateOnly(2026, 8, 25)));
+            () => _sut.CreateAsync(trip.Id, name, new DateOnly(2026, 8, 25)));
 
         _receipts.Verify(r => r.AddAsync(It.IsAny<Receipt>()), Times.Never);
     }
@@ -146,13 +148,14 @@ public class ReceiptServiceTests
     }
 
     [TestMethod]
-    public async Task DeleteAsync_Existing_Deletes()
+    public async Task DeleteAsync_Existing_DeletesReceiptAndImage()
     {
         var receipt = MakeReceipt();
         _receipts.Setup(r => r.GetByIdAsync(receipt.Id)).ReturnsAsync(receipt);
 
         await _sut.DeleteAsync(receipt.Id);
 
+        _images.Verify(i => i.DeleteByReceiptAsync(receipt.Id), Times.Once);
         _receipts.Verify(r => r.DeleteAsync(receipt.Id), Times.Once);
     }
 

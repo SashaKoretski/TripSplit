@@ -21,8 +21,10 @@ public class DomainExceptionFilter : IExceptionFilter
         var message = context.Exception switch
         {
             InvalidExpenseException e     => e.Message,
+            InvalidReceiptImageException e => e.Message,
             ExpenseNotFoundException      => "Трата не найдена",
             ReceiptNotFoundException      => "Чек не найден",
+            ReceiptImageNotFoundException => "Изображение чека не найдено",
             TripNotFoundException         => "Поездка не найдена",
             UserNotFoundException         => "Пользователь не найден",
             TripAlreadyFinishedException  => "Поездка уже завершена",

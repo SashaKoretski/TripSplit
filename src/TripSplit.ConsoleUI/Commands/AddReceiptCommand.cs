@@ -25,7 +25,7 @@ public sealed class AddReceiptCommand : IMenuItem
     {
         var trip = _session.CurrentTrip!;
 
-        var fileUrl = _io.ReadLine("URL файла чека: ").Trim();
+        var name = _io.ReadLine("Название чека: ").Trim();
         var dateRaw = _io.ReadLine("Дата (YYYY-MM-DD): ").Trim();
         if (!DateOnly.TryParse(dateRaw, out var date))
         {
@@ -33,8 +33,8 @@ public sealed class AddReceiptCommand : IMenuItem
             return;
         }
 
-        var receipt = await _receipts.CreateAsync(trip.Id, fileUrl, date);
-        _io.WriteLine($"Чек создан. Id: {receipt.Id}");
+        var receipt = await _receipts.CreateAsync(trip.Id, name, date);
+        _io.WriteLine($"Чек создан. Id: {receipt.Id}. Фото чека можно прикрепить в веб-версии.");
 
         var unlinked = (await _expenses.GetByTripAsync(trip.Id))
             .Where(e => e.ReceiptId is null)

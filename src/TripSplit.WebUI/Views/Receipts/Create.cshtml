@@ -7,9 +7,9 @@
     <form asp-action="Create" method="post">
         @Html.AntiForgeryToken()
         <label>
-            <span>URL или описание</span>
-            <input asp-for="FileUrl" type="text" />
-            <span asp-validation-for="FileUrl" class="field-error"></span>
+            <span>Название</span>
+            <input asp-for="Name" type="text" placeholder="Например, Ужин в кафе" />
+            <span asp-validation-for="Name" class="field-error"></span>
         </label>
         <label>
             <span>Дата</span>

@@ -49,24 +49,30 @@ package "TripSplit.WebUI" {
         class InviteParticipantVm
         class TripListVm
         class TripDetailsVm
-        class CreateExpenseVm
+        class CreateExpenseVm {
+            + NewReceiptName: string?
+            + NewReceiptDate: DateOnly
+            + NewReceiptFile: IFormFile?
+        }
         class ExpenseListVm
         class CreateReceiptVm
         class ReceiptListVm
+        class AttachExpensesVm
         class SettlementVm
     }
 
     package "Views (Razor)" {
-        class "Shared/_Layout"     as VLayout
-        class "Account/Login"      as VLogin
-        class "Trips/Index"        as VTrips1
-        class "Trips/Details"      as VTrips2
-        class "Expenses/Index"     as VExp1
-        class "Expenses/Create"    as VExp2
-        class "Receipts/Index"     as VRec1
-        class "Receipts/Create"    as VRec2
-        class "Settlement/Index"   as VSet
-        class "Home/Error"         as VErr
+        class "Shared/_Layout"          as VLayout
+        class "Account/Login"           as VLogin
+        class "Trips/Index"             as VTrips1
+        class "Trips/Details"           as VTrips2
+        class "Expenses/Index"          as VExp1
+        class "Expenses/Create"         as VExp2
+        class "Receipts/Index"          as VRec1
+        class "Receipts/Create"         as VRec2
+        class "Receipts/AttachExpenses" as VRec3
+        class "Settlement/Index"        as VSet
+        class "Home/Error"              as VErr
     }
 
     class Program <<entry point>> {
@@ -85,6 +91,7 @@ package "TripSplit.BusinessLogic" <<library>> {
     interface ITripService
     interface IExpenseService
     interface IReceiptService
+    interface IReceiptImageService
     interface IDebtSettlementService
     class DebtSettlementOptions <<POCO>>
 }
@@ -103,6 +110,7 @@ package "appsettings.json" <<config>> {
     class AppConfig <<file>> {
         ConnectionStrings:Postgres
         DebtSettlement:MinTransferAmount
+        ObjectStorage: { ServiceUrl, AccessKey, SecretKey, Bucket }
         Serilog: { ... }
     }
 }
@@ -127,8 +135,11 @@ TripsController         --> IUserService
 TripsController         --> IWebAppSession
 ExpensesController      --> IExpenseService
 ExpensesController      --> IReceiptService
+ExpensesController      --> IReceiptImageService
 ExpensesController      --> IUserService
 ReceiptsController      --> IReceiptService
+ReceiptsController      --> IReceiptImageService
+ReceiptsController      --> IExpenseService
 SettlementController    --> IDebtSettlementService
 SettlementController    --> IUserService
 
@@ -145,6 +156,7 @@ ExpensesController      ..> CreateExpenseVm        : bind
 ExpensesController      ..> ExpenseListVm          : render
 ReceiptsController      ..> CreateReceiptVm        : bind
 ReceiptsController      ..> ReceiptListVm          : render
+ReceiptsController      ..> AttachExpensesVm       : bind + render
 SettlementController    ..> SettlementVm           : render
 
 ' -- controller → view (что рендерится)
@@ -155,6 +167,7 @@ ExpensesController      ..> VExp1
 ExpensesController      ..> VExp2
 ReceiptsController      ..> VRec1
 ReceiptsController      ..> VRec2
+ReceiptsController      ..> VRec3
 SettlementController    ..> VSet
 HomeController          ..> VErr
 

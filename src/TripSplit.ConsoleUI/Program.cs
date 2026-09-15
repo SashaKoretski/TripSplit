@@ -3,10 +3,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TripSplit.BusinessLogic.Configuration;
 using TripSplit.BusinessLogic.Interfaces.Repositories;
+using TripSplit.BusinessLogic.Interfaces.Services;
 using TripSplit.BusinessLogic.Services;
 using TripSplit.ConsoleUI.Commands;
 using TripSplit.DataAccess.Infrastructure;
 using TripSplit.DataAccess.Repositories;
+using TripSplit.DataAccess.Storage;
 using TripSplit.Logger;
 
 // Composition Root
@@ -28,6 +30,20 @@ services.AddSingleton(new DebtSettlementOptions
     MinTransferAmount = config.GetValue<decimal?>("DebtSettlement:MinTransferAmount") ?? 0.01m
 });
 
+services.AddSingleton(new ReceiptImageOptions());
+
+services.AddSingleton(new S3StorageOptions
+{
+    ServiceUrl = config["ObjectStorage:ServiceUrl"]
+        ?? throw new InvalidOperationException("ObjectStorage:ServiceUrl is missing"),
+    AccessKey = config["ObjectStorage:AccessKey"]
+        ?? throw new InvalidOperationException("ObjectStorage:AccessKey is missing"),
+    SecretKey = config["ObjectStorage:SecretKey"]
+        ?? throw new InvalidOperationException("ObjectStorage:SecretKey is missing"),
+    Bucket = config["ObjectStorage:Bucket"]
+        ?? throw new InvalidOperationException("ObjectStorage:Bucket is missing")
+});
+
 // Data Access
 services.AddSingleton<IDbConnectionFactory>(_ =>
     new NpgsqlConnectionFactory(
@@ -38,11 +54,16 @@ services.AddSingleton<IUserRepository, UserRepository>();
 services.AddSingleton<ITripRepository, TripRepository>();
 services.AddSingleton<IExpenseRepository, ExpenseRepository>();
 services.AddSingleton<IReceiptRepository, ReceiptRepository>();
+services.AddSingleton<IReceiptImageRepository, ReceiptImageRepository>();
+
+// Object storage
+services.AddSingleton<IFileStorageService, S3FileStorageService>();
 
 // Business Logic
 services.AddSingleton<IUserService, UserService>();
 services.AddSingleton<ITripService, TripService>();
 services.AddSingleton<IExpenseService, ExpenseService>();
+services.AddSingleton<IReceiptImageService, ReceiptImageService>();
 services.AddSingleton<IReceiptService, ReceiptService>();
 services.AddSingleton<IDebtMinimizationStrategy, GreedyDebtMinimizationStrategy>();
 services.AddSingleton<IDebtSettlementService, DebtSettlementService>();

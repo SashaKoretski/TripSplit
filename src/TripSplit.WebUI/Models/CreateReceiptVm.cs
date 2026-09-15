@@ -4,8 +4,8 @@ namespace TripSplit.WebUI.Models;
 
 public class CreateReceiptVm
 {
-    [Required(ErrorMessage = "URL или описание обязательно")]
-    public string FileUrl { get; set; } = string.Empty;
+    [Required(ErrorMessage = "Название обязательно")]
+    public string Name { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Дата обязательна")]
     [DataType(DataType.Date)]

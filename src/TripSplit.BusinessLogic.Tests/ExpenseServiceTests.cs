@@ -70,7 +70,7 @@ public class ExpenseServiceTests
     {
         var trip = MakeActiveTrip();
         _trips.Setup(r => r.GetByIdAsync(trip.Id)).ReturnsAsync(trip);
-        var receipt = new Receipt(Guid.NewGuid(), trip.Id, "https://s3/x.jpg", new DateOnly(2026, 8, 25));
+        var receipt = new Receipt(Guid.NewGuid(), trip.Id, "Кафе", new DateOnly(2026, 8, 25));
         _receipts.Setup(r => r.GetByIdAsync(receipt.Id)).ReturnsAsync(receipt);
 
         var expense = await _sut.AddAsync(
@@ -152,7 +152,7 @@ public class ExpenseServiceTests
     {
         var trip = MakeActiveTrip();
         _trips.Setup(r => r.GetByIdAsync(trip.Id)).ReturnsAsync(trip);
-        var otherReceipt = new Receipt(Guid.NewGuid(), Guid.NewGuid(), "https://s3/y.jpg", new DateOnly(2026, 8, 25));
+        var otherReceipt = new Receipt(Guid.NewGuid(), Guid.NewGuid(), "Такси", new DateOnly(2026, 8, 25));
         _receipts.Setup(r => r.GetByIdAsync(otherReceipt.Id)).ReturnsAsync(otherReceipt);
 
         await Assert.ThrowsExceptionAsync<InvalidExpenseException>(
@@ -359,4 +359,70 @@ public class ExpenseServiceTests
     [TestMethod]
     public async Task DeleteAsync_EmptyId_Throws() =>
         await Assert.ThrowsExceptionAsync<ArgumentException>(() => _sut.DeleteAsync(Guid.Empty));
+
+    [TestMethod]
+    public async Task AttachToReceiptAsync_Valid_UpdatesReceiptId()
+    {
+        var trip = MakeActiveTrip();
+        var expense = MakeExpense(trip.Id);
+        var receipt = new Receipt(Guid.NewGuid(), trip.Id, "Кафе", new DateOnly(2026, 8, 25));
+        _expenses.Setup(r => r.GetByIdAsync(expense.Id)).ReturnsAsync(expense);
+        _trips.Setup(r => r.GetByIdAsync(trip.Id)).ReturnsAsync(trip);
+        _receipts.Setup(r => r.GetByIdAsync(receipt.Id)).ReturnsAsync(receipt);
+
+        await _sut.AttachToReceiptAsync(expense.Id, receipt.Id);
+
+        _expenses.Verify(r => r.UpdateAsync(It.Is<Expense>(
+            e => e.Id == expense.Id && e.ReceiptId == receipt.Id)), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task AttachToReceiptAsync_ExpenseNotFound_Throws()
+    {
+        var expenseId = Guid.NewGuid();
+        _expenses.Setup(r => r.GetByIdAsync(expenseId)).ReturnsAsync((Expense?)null);
+
+        await Assert.ThrowsExceptionAsync<ExpenseNotFoundException>(
+            () => _sut.AttachToReceiptAsync(expenseId, Guid.NewGuid()));
+    }
+
+    [TestMethod]
+    public async Task AttachToReceiptAsync_ReceiptFromAnotherTrip_Throws()
+    {
+        var trip = MakeActiveTrip();
+        var expense = MakeExpense(trip.Id);
+        var otherReceipt = new Receipt(Guid.NewGuid(), Guid.NewGuid(), "Такси", new DateOnly(2026, 8, 25));
+        _expenses.Setup(r => r.GetByIdAsync(expense.Id)).ReturnsAsync(expense);
+        _trips.Setup(r => r.GetByIdAsync(trip.Id)).ReturnsAsync(trip);
+        _receipts.Setup(r => r.GetByIdAsync(otherReceipt.Id)).ReturnsAsync(otherReceipt);
+
+        await Assert.ThrowsExceptionAsync<InvalidExpenseException>(
+            () => _sut.AttachToReceiptAsync(expense.Id, otherReceipt.Id));
+
+        _expenses.Verify(r => r.UpdateAsync(It.IsAny<Expense>()), Times.Never);
+    }
+
+    [TestMethod]
+    public async Task AttachToReceiptAsync_TripFinished_Throws()
+    {
+        var trip = MakeFinishedTrip(MakeActiveTrip());
+        var expense = MakeExpense(trip.Id);
+        _expenses.Setup(r => r.GetByIdAsync(expense.Id)).ReturnsAsync(expense);
+        _trips.Setup(r => r.GetByIdAsync(trip.Id)).ReturnsAsync(trip);
+
+        await Assert.ThrowsExceptionAsync<TripAlreadyFinishedException>(
+            () => _sut.AttachToReceiptAsync(expense.Id, Guid.NewGuid()));
+
+        _expenses.Verify(r => r.UpdateAsync(It.IsAny<Expense>()), Times.Never);
+    }
+
+    [TestMethod]
+    public async Task AttachToReceiptAsync_EmptyExpenseId_Throws() =>
+        await Assert.ThrowsExceptionAsync<ArgumentException>(
+            () => _sut.AttachToReceiptAsync(Guid.Empty, Guid.NewGuid()));
+
+    [TestMethod]
+    public async Task AttachToReceiptAsync_EmptyReceiptId_Throws() =>
+        await Assert.ThrowsExceptionAsync<ArgumentException>(
+            () => _sut.AttachToReceiptAsync(Guid.NewGuid(), Guid.Empty));
 }
