@@ -71,9 +71,6 @@ dotnet run --project TripSplit.WebUI
 ### L2 — Контейнеры
 ![L2 Containers](img/C4/L1-L3/L2_Containers.png)
 
-### L4 — Диаграмма классов Web UI (пользовательский графический интерфейс)
-![L4 WebUI](img/C4/L4/L4_Component_WebUI.svg)
-
 ### L3 — Компоненты Web UI
 ![L3 WebUI](img/C4/L1-L3/L3_WebUI.png)
 
@@ -100,6 +97,9 @@ dotnet run --project TripSplit.WebUI
 
 ### L4 — Диаграмма классов Logger (компонент логирования)
 ![L4 Logger](img/C4/L4/L4_Component_Logger.png)
+
+### L4 — Диаграмма классов Web UI (пользовательский графический интерфейс)
+![L4 WebUI](img/C4/L4/L4_Component_WebUI.svg)
 
 ## Диаграммы последовательностей (UML)
 
