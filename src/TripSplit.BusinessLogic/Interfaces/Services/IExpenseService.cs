@@ -22,4 +22,7 @@ public interface IExpenseService
 
     // Привязывает существующую трату к чеку
     Task AttachToReceiptAsync(Guid expenseId, Guid receiptId);
+
+    // Отвязывает трату от чека (если была привязана)
+    Task DetachFromReceiptAsync(Guid expenseId);
 }
