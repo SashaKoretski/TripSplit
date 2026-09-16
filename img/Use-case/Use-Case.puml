@@ -23,16 +23,19 @@ rectangle "TripSplit" {
     usecase "Назначить, на кого\nпотрачено" as UC_Consumer
     usecase "Удалить трату" as UC_DelExp
     usecase "Добавить чек" as UC_AddRcp
+    usecase "Загрузить фото чека\n(в S3-хранилище)" as UC_UploadImg
     usecase "Привязать траты\nк чеку" as UC_LinkRcp
     usecase "Закончить поездку" as UC_Finish
 
     ' Include-связи
-    UC_Create ..> UC_Name    : <<include>>
-    UC_Create ..> UC_Invite  : <<include>>
-    UC_AddExp ..> UC_Price   : <<include>>
-    UC_AddExp ..> UC_Payer   : <<include>>
-    UC_AddExp ..> UC_Consumer: <<include>>
-    UC_AddRcp ..> UC_LinkRcp : <<include>>
+    UC_Create ..> UC_Name      : <<include>>
+    UC_Create ..> UC_Invite    : <<include>>
+    UC_AddExp ..> UC_Price     : <<include>>
+    UC_AddExp ..> UC_Payer     : <<include>>
+    UC_AddExp ..> UC_Consumer  : <<include>>
+    UC_AddRcp ..> UC_LinkRcp   : <<include>>
+    UC_AddRcp ..> UC_UploadImg : <<extend>>
+    UC_AddExp ..> UC_UploadImg : <<extend>>
 }
 
 ' Актор → варианты использования

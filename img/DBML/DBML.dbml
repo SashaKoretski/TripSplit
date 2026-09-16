@@ -49,8 +49,18 @@ Table trip_participants {
 Table receipts {
   id         uuid         [pk, default: `gen_random_uuid()`]
   trip_id    uuid         [not null, ref: > trips.id]
-  file_url   varchar(500) [not null, note: 'ссылка на MinIO/S3']
+  name       varchar(200) [not null]
   date       date         [not null]
+}
+
+Table receipt_images {
+  id                  uuid         [pk, default: `gen_random_uuid()`]
+  receipt_id          uuid         [not null, unique, ref: > receipts.id, note: 'один чек — одно изображение']
+  storage_key         varchar(500) [not null, note: 'ключ объекта в S3-совместимом хранилище (MinIO/AWS S3)']
+  content_type        varchar(100) [not null]
+  file_size_bytes     bigint       [not null]
+  original_file_name  varchar(255) [not null]
+  uploaded_at         timestamptz  [not null, default: `now()`]
 }
 
 Table expenses {

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
 using TripSplit.BusinessLogic.Models;
 
 namespace TripSplit.WebUI.Models;
@@ -22,7 +23,13 @@ public class CreateExpenseVm
     // Список валидируется вручную в контроллере
     public List<Guid> ConsumerIds { get; set; } = new();
 
+    // Существующий чек
     public Guid? ReceiptId { get; set; }
+
+    // Новый чек — создается и загружается вместе с тратой, если выбран файл
+    public string? NewReceiptName { get; set; }
+    public DateOnly NewReceiptDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+    public IFormFile? NewReceiptFile { get; set; }
 
     // Данные для отрисовки селектов/чекбоксов
     public IReadOnlyList<User> Participants { get; set; } = Array.Empty<User>();

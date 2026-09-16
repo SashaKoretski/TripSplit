@@ -24,8 +24,18 @@ entity "Поездка" as Trip {
 entity "Чек" as Receipt {
     id
     --
-    ссылка
+    название
     дата
+}
+
+entity "Изображение чека" as ReceiptImage {
+    id
+    --
+    storage_key (S3)
+    тип файла
+    размер
+    имя файла
+    загружено
 }
 
 entity "Расход" as Expense {
@@ -54,6 +64,7 @@ entity "Статистика поездки" as Stats {
 User    }o-left-o{ Trip      : "принадлежит"
 Trip    ||-left-o{ Receipt   : "содержит"
 Receipt ||-right-o{ Expense  : "группирует"
+Receipt ||-down-o| ReceiptImage : "содержит фото"
 
 Trip    ||-right-o{ Transfer : "формирует"
 

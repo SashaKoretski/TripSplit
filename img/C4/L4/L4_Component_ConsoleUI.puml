@@ -87,6 +87,7 @@ package "appsettings.json" <<config>> {
     class AppConfig <<file>> {
         ConnectionStrings:Postgres
         DebtSettlement:MinTransferAmount
+        ObjectStorage: { ServiceUrl, AccessKey, SecretKey, Bucket }
         Serilog: { ... }
     }
 }

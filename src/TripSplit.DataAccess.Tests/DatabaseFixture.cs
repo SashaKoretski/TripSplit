@@ -24,7 +24,7 @@ public sealed class DatabaseFixture : IAsyncLifetime
         await using var conn = await Factory.OpenAsync();
         await using var cmd = conn.CreateCommand();
         cmd.CommandText =
-            "TRUNCATE expense_consumers, expenses, receipts, trip_participants, trips, users " +
+            "TRUNCATE expense_consumers, expenses, receipt_images, receipts, trip_participants, trips, users " +
             "RESTART IDENTITY CASCADE";
         await cmd.ExecuteNonQueryAsync();
     }

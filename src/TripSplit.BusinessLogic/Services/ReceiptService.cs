@@ -9,15 +9,17 @@ public class ReceiptService : IReceiptService
 {
     private readonly IReceiptRepository _receipts;
     private readonly ITripRepository _trips;
+    private readonly IReceiptImageService _images;
 
-    public ReceiptService(IReceiptRepository receipts, ITripRepository trips)
+    public ReceiptService(IReceiptRepository receipts, ITripRepository trips, IReceiptImageService images)
     {
         _receipts = receipts ?? throw new ArgumentNullException(nameof(receipts));
         _trips = trips ?? throw new ArgumentNullException(nameof(trips));
+        _images = images ?? throw new ArgumentNullException(nameof(images));
     }
 
     // Регистрирует чек в активной поездке
-    public async Task<Receipt> CreateAsync(Guid tripId, string fileUrl, DateOnly date)
+    public async Task<Receipt> CreateAsync(Guid tripId, string name, DateOnly date)
     {
         if (tripId == Guid.Empty)
             throw new ArgumentException("Trip id cannot be empty", nameof(tripId));
@@ -27,7 +29,7 @@ public class ReceiptService : IReceiptService
         if (trip.Status == TripStatus.Finished)
             throw new TripAlreadyFinishedException(tripId);
 
-        var receipt = new Receipt(Guid.NewGuid(), tripId, fileUrl, date);
+        var receipt = new Receipt(Guid.NewGuid(), tripId, name, date);
         await _receipts.AddAsync(receipt);
         return receipt;
     }
@@ -57,6 +59,7 @@ public class ReceiptService : IReceiptService
         var receipt = await _receipts.GetByIdAsync(id)
             ?? throw new ReceiptNotFoundException(id);
 
+        await _images.DeleteByReceiptAsync(receipt.Id);
         await _receipts.DeleteAsync(receipt.Id);
     }
 }

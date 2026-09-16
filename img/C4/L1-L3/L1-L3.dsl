@@ -3,6 +3,8 @@ workspace "TripSplit" "Учёт совместных расходов в пое�
     model {
         user = person "Пользователь" "Организатор и участник поездки. Вносит траты, получает итоговый расчёт долгов."
 
+        objectStorage = softwareSystem "Object Storage (S3 / MinIO)" "Хранит изображения (фото/скан) чеков, загруженные пользователями." "External"
+
         tripSplit = softwareSystem "TripSplit" "Считает общие расходы и минимизирует количество переводов между участниками." {
 
             webUi = container "Web UI" "Многостраничное веб-приложение (MVC): страницы поездок, трат, чеков и расчёта. Подключает BusinessLogic напрямую (in-process)." "ASP.NET Core MVC, Razor Views, C#" "WebBrowser" {
@@ -45,32 +47,39 @@ workspace "TripSplit" "Учёт совместных расходов в пое�
             businessLogic = container "Business Logic" "Сервисы предметной области: поездки, траты, чеки, расчёт долгов. Class Library, подключается in-process." ".NET Class Library, C#" {
                 tripService       = component "TripService" "Жизненный цикл поездки." "C#"
                 expenseService    = component "ExpenseService" "CRUD трат, привязка к участникам." "C#"
-                receiptService    = component "ReceiptService" "Чеки и их метаданные." "C#"
+                receiptService    = component "ReceiptService" "Чеки: название, дата. Каскадно удаляет привязанное изображение через ReceiptImageService." "C#"
+                receiptImageService = component "ReceiptImageService" "Валидация файла (тип/размер), (пере)загрузка и удаление изображения чека — оркестрирует хранилище и метаданные." "C#"
                 userService       = component "UserService" "Работа с пользователями." "C#"
                 settlementService = component "DebtSettlementService" "Собирает траты, считает балансы, вызывает стратегию." "C#"
                 debtStrategy      = component "IDebtMinimizationStrategy (Greedy)" "Алгоритм минимизации переводов. Параметризуется DebtSettlementOptions. Внедряется через DI (Strategy)." "C#"
                 settlementOptions = component "DebtSettlementOptions" "POCO с параметрами (MinTransferAmount). Заполняется из IConfiguration." "C# POCO"
 
-                settlementService -> debtStrategy      "делегирует минимизацию"
-                debtStrategy      -> settlementOptions "читает параметры"
+                settlementService   -> debtStrategy      "делегирует минимизацию"
+                debtStrategy        -> settlementOptions "читает параметры"
+                receiptService      -> receiptImageService "удаляет файл при удалении чека"
             }
 
-            dataAccess = container "Data Access" "Реализация I*Repository (интерфейсы объявлены в BusinessLogic) и подключения к БД." ".NET Class Library, C#" {
-                tripRepo    = component "TripRepository"           "Доступ к данным поездок."       "C# + Npgsql"
-                expenseRepo = component "ExpenseRepository"        "Доступ к данным трат."          "C# + Npgsql"
-                receiptRepo = component "ReceiptRepository"        "Метаданные чеков."              "C# + Npgsql"
-                userRepo    = component "UserRepository"           "Доступ к данным пользователей." "C# + Npgsql"
-                connFactory = component "NpgsqlConnectionFactory"  "Фабрика подключений (IDbConnectionFactory). Строка подключения из IConfiguration." "Npgsql"
-                mappers     = component "Mappers"                  "Мэппинг Row ↔ доменные модели." "C#"
+            dataAccess = container "Data Access" "Реализация I*Repository (интерфейсы объявлены в BusinessLogic), подключения к БД и файловому хранилищу." ".NET Class Library, C#" {
+                tripRepo         = component "TripRepository"           "Доступ к данным поездок."       "C# + Npgsql"
+                expenseRepo      = component "ExpenseRepository"        "Доступ к данным трат."          "C# + Npgsql"
+                receiptRepo      = component "ReceiptRepository"        "Метаданные чеков (название, дата)." "C# + Npgsql"
+                receiptImageRepo = component "ReceiptImageRepository"   "Метаданные загруженного файла чека (storage_key, content-type, размер, имя)." "C# + Npgsql"
+                userRepo         = component "UserRepository"           "Доступ к данным пользователей." "C# + Npgsql"
+                connFactory      = component "NpgsqlConnectionFactory"  "Фабрика подключений (IDbConnectionFactory). Строка подключения из IConfiguration." "Npgsql"
+                mappers          = component "Mappers"                  "Мэппинг Row ↔ доменные модели." "C#"
+                s3Storage        = component "S3FileStorageService"     "Загрузка/удаление объектов и presigned GET-ссылки на скачивание (IFileStorageService)." "C# + AWSSDK.S3"
 
-                tripRepo    -> connFactory "открывает"
-                expenseRepo -> connFactory "открывает"
-                receiptRepo -> connFactory "открывает"
-                userRepo    -> connFactory "открывает"
-                tripRepo    -> mappers     "использует"
-                expenseRepo -> mappers     "использует"
-                receiptRepo -> mappers     "использует"
-                userRepo    -> mappers     "использует"
+                tripRepo         -> connFactory "открывает"
+                expenseRepo      -> connFactory "открывает"
+                receiptRepo      -> connFactory "открывает"
+                receiptImageRepo -> connFactory "открывает"
+                userRepo         -> connFactory "открывает"
+                tripRepo         -> mappers     "использует"
+                expenseRepo      -> mappers     "использует"
+                receiptRepo      -> mappers     "использует"
+                receiptImageRepo -> mappers     "использует"
+                userRepo         -> mappers     "использует"
+                s3Storage        -> objectStorage "Upload/Delete/Presign объекта" "S3 API (HTTPS)"
             }
 
             logger = container "Logging" "Фасад над Serilog: конфигурирует провайдер Microsoft.Extensions.Logging, чтобы остальные контейнеры зависели только от ILogger<T> из абстракций." ".NET Class Library, C# + Serilog" {
@@ -84,7 +93,7 @@ workspace "TripSplit" "Учёт совместных расходов в пое�
 
             logFiles = container "Log Files" "Rolling log-файлы: действия пользователя, исключения, диагностика. Ротация по дням." "Файловая система, logs/tripsplit-*.log" "Database"
 
-            database = container "База данных" "Пользователи, поездки, траты, метаданные чеков." "PostgreSQL" "Database"
+            database = container "База данных" "Пользователи, поездки, траты, метаданные чеков и их изображений." "PostgreSQL" "Database"
         }
 
         # L1
@@ -106,11 +115,12 @@ workspace "TripSplit" "Учёт совместных расходов в пое�
         logger    -> logFiles      "Пишет структурированные события"      "Serilog File Sink"
 
         # L3 — компоненты Web UI на сервисы бизнес-логики
-        controllers -> tripService       "вызывают"
-        controllers -> expenseService    "вызывают"
-        controllers -> receiptService    "вызывают"
-        controllers -> userService       "вызывают"
-        controllers -> settlementService "вызывают"
+        controllers -> tripService         "вызывают"
+        controllers -> expenseService      "вызывают"
+        controllers -> receiptService      "вызывают"
+        controllers -> receiptImageService "вызывают (загрузка/удаление фото, привязка трат к чеку)"
+        controllers -> userService         "вызывают"
+        controllers -> settlementService   "вызывают"
         webSession  -> userService       "лениво подгружает текущего пользователя"
         webSession  -> tripService       "лениво подгружает активную поездку"
 
@@ -122,12 +132,14 @@ workspace "TripSplit" "Учёт совместных расходов в пое�
         cCommands -> settlementService "вызывают"
 
         # L3 — сервисы BusinessLogic на репозитории
-        tripService       -> tripRepo    "использует"
-        expenseService    -> expenseRepo "использует"
-        receiptService    -> receiptRepo "использует"
-        userService       -> userRepo    "использует"
-        settlementService -> tripRepo    "читает поездку"
-        settlementService -> expenseRepo "читает траты"
+        tripService         -> tripRepo         "использует"
+        expenseService      -> expenseRepo      "использует"
+        receiptService      -> receiptRepo      "использует"
+        receiptImageService -> receiptImageRepo "использует"
+        receiptImageService -> s3Storage        "использует"
+        userService         -> userRepo         "использует"
+        settlementService   -> tripRepo         "читает поездку"
+        settlementService   -> expenseRepo      "читает траты"
 
         connFactory -> database "TCP"
 
@@ -142,6 +154,7 @@ workspace "TripSplit" "Учёт совместных расходов в пое�
         cCommandDecorator -> loggingExt        "пишет действия пользователя и исключения"
         loggingExt        -> logFiles          "Serilog File Sink"
         connFactory       -> configuration     "GetConnectionString(\"Postgres\")"
+        s3Storage         -> configuration     "ObjectStorage:ServiceUrl/AccessKey/SecretKey/Bucket"
     }
 
     views {

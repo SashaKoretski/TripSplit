@@ -8,26 +8,34 @@ database "PostgreSQL" as DB
 database "S3 / MinIO" as S3
 
 U -> F : Открыть форму траты
+U -> F : Указать сумму, плательщика,\nпотребителей
 
-alt Есть чек
-    U -> F : Прикрепить фото чека
-    F -> B : POST /receipts (multipart)
-    B -> S3 : Upload file
-    S3 --> B : fileUrl
-    B -> DB : INSERT receipt(fileUrl)
+alt Новый чек (фото прямо здесь)
+    U -> F : Название чека, дата,\nфайл фото/скана
+    F -> B : POST /expenses (multipart:\nexpense + newReceipt + file)
+    B -> DB : INSERT receipt(name, date)
     DB --> B : receiptId
-    B --> F : { receiptId }
-
-    U -> F : Добавить траты из чека,\nпривязать к участникам
-    F -> B : POST /expenses [ ...items, receiptId ]
+    B -> S3 : Upload file (S3FileStorageService)
+    S3 --> B : ok
+    B -> DB : INSERT receipt_images(receiptId, storageKey,\ncontentType, size, fileName)
+    DB --> B : ok
+else Существующий чек
+    U -> F : Выбрать чек из списка\n(название — дата)
+    F -> B : POST /expenses { item, receiptId }
 else Без чека
-    U -> F : Указать сумму, плательщика,\nпотребителей
     F -> B : POST /expenses { item }
 end
 
-B -> DB : INSERT expenses
+B -> DB : INSERT expense(receiptId?)
 DB --> B : ok
-B --> F : { expenses }
-F --> U : Траты сохранены
+B --> F : { expense }
+F --> U : Трата сохранена
+
+note over F, S3
+  Просмотр фото чека — по отдельному запросу:
+  B запрашивает у S3 presigned GET-ссылку (15 мин)
+  и отдаёт её во Frontend, файл при этом
+  через Backend не проходит.
+end note
 
 @enduml

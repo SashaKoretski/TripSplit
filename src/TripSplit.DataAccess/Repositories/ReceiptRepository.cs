@@ -44,13 +44,13 @@ public sealed class ReceiptRepository : IReceiptRepository
     public async Task AddAsync(Receipt receipt)
     {
         ArgumentNullException.ThrowIfNull(receipt);
-        const string sql = "INSERT INTO receipts (id, trip_id, file_url, date) VALUES (@id, @tid, @url, @date)";
+        const string sql = "INSERT INTO receipts (id, trip_id, name, date) VALUES (@id, @tid, @name, @date)";
         try
         {
             await ExecuteAsync(sql,
                 ("id", receipt.Id),
                 ("tid", receipt.TripId),
-                ("url", receipt.FileUrl),
+                ("name", receipt.Name),
                 ("date", receipt.Date));
         }
         catch (PostgresException e) when (e.SqlState == PostgresErrorCodes.UniqueViolation)

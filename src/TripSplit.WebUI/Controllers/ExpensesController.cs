@@ -10,16 +10,19 @@ public class ExpensesController : TripAwareController
 {
     private readonly IExpenseService _expenses;
     private readonly IReceiptService _receipts;
+    private readonly IReceiptImageService _receiptImages;
     private readonly IUserService _users;
 
     public ExpensesController(
         IExpenseService expenses,
         IReceiptService receipts,
+        IReceiptImageService receiptImages,
         IUserService users,
         IWebAppSession session) : base(session)
     {
         _expenses = expenses;
         _receipts = receipts;
+        _receiptImages = receiptImages;
         _users = users;
     }
 
@@ -49,7 +52,7 @@ public class ExpensesController : TripAwareController
     }
 
     [HttpGet]
-    public async Task<IActionResult> Create()
+    public async Task<IActionResult> Create(Guid? receiptId)
     {
         var (trip, redirect) = await ResolveCurrentTripAsync();
         if (redirect is not null) return redirect;
@@ -60,7 +63,9 @@ public class ExpensesController : TripAwareController
             return RedirectToAction(nameof(Index));
         }
 
-        return View(await BuildCreateVmAsync(trip));
+        var vm = await BuildCreateVmAsync(trip);
+        vm.ReceiptId = receiptId;
+        return View(vm);
     }
 
     [HttpPost, ValidateAntiForgeryToken]
@@ -84,12 +89,24 @@ public class ExpensesController : TripAwareController
             repopulated.PayerId = vm.PayerId;
             repopulated.ConsumerIds = vm.ConsumerIds;
             repopulated.ReceiptId = vm.ReceiptId;
+            repopulated.NewReceiptName = vm.NewReceiptName;
+            repopulated.NewReceiptDate = vm.NewReceiptDate;
             return View(repopulated);
+        }
+
+        var receiptId = vm.ReceiptId;
+        if (vm.NewReceiptFile is { Length: > 0 } file)
+        {
+            var receiptName = string.IsNullOrWhiteSpace(vm.NewReceiptName) ? vm.Name : vm.NewReceiptName;
+            var receipt = await _receipts.CreateAsync(trip!.Id, receiptName.Trim(), vm.NewReceiptDate);
+            await using var stream = file.OpenReadStream();
+            await _receiptImages.UploadAsync(receipt.Id, stream, file.FileName, file.ContentType, file.Length);
+            receiptId = receipt.Id;
         }
 
         await _expenses.AddAsync(
             trip!.Id, vm.PayerId, vm.Name.Trim(), vm.Type,
-            vm.Value, vm.Discount, vm.ConsumerIds, vm.ReceiptId);
+            vm.Value, vm.Discount, vm.ConsumerIds, receiptId);
 
         TempData["Info"] = "Трата добавлена.";
         return RedirectToAction(nameof(Index));
