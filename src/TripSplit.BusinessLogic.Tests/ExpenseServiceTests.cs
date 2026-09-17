@@ -422,6 +422,48 @@ public class ExpenseServiceTests
             () => _sut.AttachToReceiptAsync(Guid.Empty, Guid.NewGuid()));
 
     [TestMethod]
+    public async Task DetachFromReceiptAsync_Attached_ClearsReceiptId()
+    {
+        var trip = MakeActiveTrip();
+        var receipt = new Receipt(Guid.NewGuid(), trip.Id, "Кафе", new DateOnly(2026, 8, 25));
+        var expense = MakeExpense(trip.Id, receiptId: receipt.Id);
+        _expenses.Setup(r => r.GetByIdAsync(expense.Id)).ReturnsAsync(expense);
+        _trips.Setup(r => r.GetByIdAsync(trip.Id)).ReturnsAsync(trip);
+
+        await _sut.DetachFromReceiptAsync(expense.Id);
+
+        _expenses.Verify(r => r.UpdateAsync(It.Is<Expense>(
+            e => e.Id == expense.Id && e.ReceiptId == null)), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task DetachFromReceiptAsync_NotAttached_DoesNothing()
+    {
+        var trip = MakeActiveTrip();
+        var expense = MakeExpense(trip.Id);
+        _expenses.Setup(r => r.GetByIdAsync(expense.Id)).ReturnsAsync(expense);
+
+        await _sut.DetachFromReceiptAsync(expense.Id);
+
+        _expenses.Verify(r => r.UpdateAsync(It.IsAny<Expense>()), Times.Never);
+    }
+
+    [TestMethod]
+    public async Task DetachFromReceiptAsync_ExpenseNotFound_Throws()
+    {
+        var expenseId = Guid.NewGuid();
+        _expenses.Setup(r => r.GetByIdAsync(expenseId)).ReturnsAsync((Expense?)null);
+
+        await Assert.ThrowsExceptionAsync<ExpenseNotFoundException>(
+            () => _sut.DetachFromReceiptAsync(expenseId));
+    }
+
+    [TestMethod]
+    public async Task DetachFromReceiptAsync_EmptyId_Throws() =>
+        await Assert.ThrowsExceptionAsync<ArgumentException>(
+            () => _sut.DetachFromReceiptAsync(Guid.Empty));
+
+    [TestMethod]
     public async Task AttachToReceiptAsync_EmptyReceiptId_Throws() =>
         await Assert.ThrowsExceptionAsync<ArgumentException>(
             () => _sut.AttachToReceiptAsync(Guid.NewGuid(), Guid.Empty));

@@ -127,6 +127,24 @@ public class ExpenseService : IExpenseService
         await UpdateAsync(updated);
     }
 
+    // Отвязывает трату от чека, если была привязана
+    public async Task DetachFromReceiptAsync(Guid expenseId)
+    {
+        if (expenseId == Guid.Empty)
+            throw new ArgumentException("Expense id cannot be empty", nameof(expenseId));
+
+        var expense = await _expenses.GetByIdAsync(expenseId)
+            ?? throw new ExpenseNotFoundException(expenseId);
+        if (expense.ReceiptId is null)
+            return;
+
+        var updated = new Expense(
+            expense.Id, expense.TripId, expense.PayerId, expense.Name, expense.Type,
+            expense.Value, expense.Discount, expense.ConsumerIds);
+
+        await UpdateAsync(updated);
+    }
+
     // Проверяет, что плательщик и все потребители — участники поездки
     private static void EnsureParticipants(Trip trip, Guid payerId, IReadOnlyCollection<Guid> consumerIds)
     {

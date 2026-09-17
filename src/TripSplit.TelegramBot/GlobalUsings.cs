@@ -1,0 +1,15 @@
+global using System;
+global using System.Collections.Generic;
+global using System.Linq;
+global using System.Threading;
+global using System.Threading.Tasks;
+global using Telegram.Bot;
+global using Telegram.Bot.Types;
+global using Telegram.Bot.Types.Enums;
+global using Telegram.Bot.Types.ReplyMarkups;
+global using TripSplit.BusinessLogic.Interfaces.Services;
+global using TripSplit.BusinessLogic.Models;
+global using TripSplit.BusinessLogic.Models.Exceptions;
+global using TripSplit.TelegramBot.Session;
+global using TripSplit.TelegramBot.Conversations;
+global using TripSplit.TelegramBot.Formatting;
