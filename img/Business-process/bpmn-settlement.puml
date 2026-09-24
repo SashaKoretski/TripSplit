@@ -1,0 +1,41 @@
+@startuml bpmn-settlement
+title Завершение поездки и расчет долгов
+skinparam activityBorderColor #333333
+
+|Участник|
+start
+if (что сделать?) then (посмотреть предварительно)
+  :Открыть Settlement/Index\n(без завершения поездки);
+  |Система|
+  :Собрать траты поездки;
+  if (есть траты?) then (нет)
+    :TotalSpent = 0,\nпереводов нет;
+  else (да)
+    :Посчитать PerUserSpent и баланс\nкаждого участника;
+    :Построить минимальный набор\nпереводов (GreedyDebtMinimizationStrategy);
+  endif
+  :Показать предварительный итог;
+  |Участник|
+  stop
+else (завершить поездку)
+  :Нажать "Завершить поездку"\nна Trips/Details;
+  |Система|
+  if (поездка уже завершена?) then (да)
+    :TripAlreadyFinishedException\n-> показать ошибку, статус не меняется;
+    stop
+  else (нет)
+    :Trip.Status = Finished;
+    :Редирект на Settlement/Index;
+    :Собрать траты поездки;
+    if (есть траты?) then (нет)
+      :TotalSpent = 0,\nпереводов нет;
+    else (да)
+      :Посчитать PerUserSpent\nи баланс каждого участника;
+      :Построить минимальный набор\nпереводов (GreedyDebtMinimizationStrategy);
+    endif
+    :Показать итог:\nсумма, траты по участникам,\nсписок переводов;
+    |Участник|
+    stop
+  endif
+endif
+@enduml

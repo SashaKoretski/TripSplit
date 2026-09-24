@@ -11,7 +11,7 @@ rectangle "TripSplit" {
     usecase "Создать поездку" as UC_Create
     usecase "Задать название" as UC_Name
     usecase "Пригласить\nпользователей\n(ссылка)" as UC_Invite
-    usecase "Войти через Google" as UC_Login
+    usecase "Войти по email\n(без пароля)" as UC_Login
     usecase "Посмотреть траты" as UC_ViewExp
     usecase "Посмотреть статистику" as UC_Stats
     usecase "Посмотреть анализ\nраспределения долгов" as UC_Debts

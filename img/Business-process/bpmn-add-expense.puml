@@ -1,0 +1,54 @@
+@startuml bpmn-add-expense
+title Добавление траты с чеком
+skinparam activityBorderColor #333333
+
+|Участник|
+start
+:Открыть Expenses/Create;
+|Система|
+if (поездка завершена?\n(Trip.Status == Finished)) then (да)
+  :Показать ошибку,\nредирект на Expenses/Index;
+  stop
+else (нет)
+  :Показать форму добавления траты;
+endif
+
+|Участник|
+:Заполнить название, тип,\nсумму, скидку, плательщика,\nсписок потребителей;
+if (нужен чек?) then (новый чек)
+  :Ввести название/дату чека\nи приложить фото;
+  |Система|
+  if (файл чека валиден?\n(тип/размер)) then (нет)
+    :InvalidReceiptImageException\n-> показать ошибку;
+    |Участник|
+    -> вернуться к форме;
+    detach
+  else (да)
+    :Создать Receipt;
+    :Загрузить фото в S3/MinIO,\nсоздать ReceiptImage;
+  endif
+  |Участник|
+elseif (нужен чек?) then (существующий чек)
+  :Выбрать receiptId из списка;
+else (без чека)
+  :Оставить ReceiptId пустым;
+endif
+
+:Отправить форму (submit);
+|Система|
+if (≥1 потребитель и\nскидка ≤ сумме?) then (нет)
+  :Показать ошибки валидации;
+  |Участник|
+  -> вернуться к форме;
+  detach
+else (да)
+  if (сумма > 0 и скидка ≥ 0?\n(конструктор Expense)) then (нет)
+    :InvalidExpenseException\n-> показать ошибку;
+    stop
+  else (да)
+    :Создать Expense + expense_consumers,\nсвязать с Receipt (если есть);
+    :Редирект на Expenses/Index;
+  endif
+endif
+stop
+@enduml
