@@ -10,14 +10,23 @@
 
 **Ключевые созданные/измененные артефакты**:
 
-- `docs/requirements.md`, `scenarios.md`, `traceability.md`, `screens.md` (новые)
-- `docs/adr/ADR-001-auth.md`, `ADR-002-receipt-image-storage.md`, `ADR-003-deployment.md` (новые)
-- `img/Business-process/bpmn-create-trip.puml`, `bpmn-add-expense.puml`, `bpmn-settlement.puml` (новые)
+- `README.md` - переписан: цель проекта, FR/NFR, use-case, BPMN, 3 сценария, ER,
+  технологический стек, диаграмма БД, C4 (Context/Container/Component), черновые
+  эскизы экранов, 2+ ADR - весь обязательный минимум изложен прямо в тексте,
+  без ссылок на другие файлы
+- `docs/details.md` (новый) - развернутая версия того же материала (полные FR/BR,
+  полные сценарии, трассировка, карта экранов, полные ADR) плюс то, что не входит
+  в обязательный минимум (sequence-диаграммы, C4 L4, конкуренты, инструкция сборки)
+- `img/Business-process/bpmn-create-trip.puml`, `bpmn-add-expense.puml`, `bpmn-settlement.puml` (новые; PNG сгенерированы пользователем)
 - `img/Use-case/Use-Case.puml` - формулировка входа поправлена под факт (email вместо Google)
 - `img/DBML/DBML.dbml` - аннотация `google_id` поправлена под факт
 - `img/ER/ER.puml` - `Transfer`/`TripStatistics` помечены как производные (не хранятся в БД)
 - `img/Business-process/b_process.drawio` - оставлен как обзорная сквозная схема, детализация вынесена в три новых BPMN рядом
-- `README.md` - добавлены разделы про требования, сценарии, экраны, архитектурные решения; ссылки на новые файлы
+
+Промежуточный вариант (`docs/requirements.md`, `scenarios.md`, `traceability.md`,
+`screens.md`, `docs/adr/*.md`, отдельный README лабы) был создан, затем по
+запросу пользователя объединен в корневой `README.md` и `docs/details.md` -
+чтобы структура проекта не показывала деление по лабораторным.
 
 **Выполненные проверки**:
 
