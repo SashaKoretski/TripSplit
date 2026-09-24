@@ -125,7 +125,7 @@
 
 ![Список поездок - создание и присоединение](img/Web_Interface/trip_web_ui.png)
 
-![Добавление траты](img/Web_Interface/expense_web_ui.png)
+![Добавление траты](img/Web_Interface/expence_web_ui.png)
 
 ![Итог и расчет долгов](img/Web_Interface/result_web_ui.png)
 
