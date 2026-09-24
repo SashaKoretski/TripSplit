@@ -17,7 +17,7 @@ Table users {
   id          uuid        [pk, default: `gen_random_uuid()`]
   name        varchar(100) [not null]
   email       varchar(255) [not null, unique]
-  google_id   varchar(255) [not null, unique, note: 'sub-claim из Google OAuth']
+  google_id   varchar(255) [not null, unique, note: 'идентификатор входа; сейчас всегда "local:{email}" (email-вход без пароля), поле зарезервировано под будущий Google OAuth']
 
   Indexes {
     google_id
