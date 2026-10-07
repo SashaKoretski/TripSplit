@@ -5,6 +5,9 @@ using Xunit;
 
 namespace TripSplit.DataAccess.Tests;
 
+// Integration-тесты: требуют реального Postgres (см. DatabaseFixture). Для изолированных
+// unit-тестов UserRepository без БД см. Repositories/UserRepositoryUnitTests.cs (LAB01).
+[Trait("Category", "Integration")]
 [Collection("Database")]
 public sealed class UserRepositoryTests
 {

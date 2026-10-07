@@ -55,7 +55,7 @@ public class ReceiptServiceTests
         var tripId = Guid.NewGuid();
         _trips.Setup(r => r.GetByIdAsync(tripId)).ReturnsAsync((Trip?)null);
 
-        await Assert.ThrowsExceptionAsync<TripNotFoundException>(
+        await Assert.ThrowsExactlyAsync<TripNotFoundException>(
             () => _sut.CreateAsync(tripId, "Кафе", new DateOnly(2026, 8, 25)));
 
         _receipts.Verify(r => r.AddAsync(It.IsAny<Receipt>()), Times.Never);
@@ -67,7 +67,7 @@ public class ReceiptServiceTests
         var trip = MakeTrip(status: TripStatus.Finished);
         _trips.Setup(r => r.GetByIdAsync(trip.Id)).ReturnsAsync(trip);
 
-        await Assert.ThrowsExceptionAsync<TripAlreadyFinishedException>(
+        await Assert.ThrowsExactlyAsync<TripAlreadyFinishedException>(
             () => _sut.CreateAsync(trip.Id, "Кафе", new DateOnly(2026, 8, 25)));
 
         _receipts.Verify(r => r.AddAsync(It.IsAny<Receipt>()), Times.Never);
@@ -76,13 +76,13 @@ public class ReceiptServiceTests
     [TestMethod]
     public async Task CreateAsync_EmptyTripId_Throws()
     {
-        await Assert.ThrowsExceptionAsync<ArgumentException>(
+        await Assert.ThrowsExactlyAsync<ArgumentException>(
             () => _sut.CreateAsync(Guid.Empty, "Кафе", new DateOnly(2026, 8, 25)));
 
         _trips.Verify(r => r.GetByIdAsync(It.IsAny<Guid>()), Times.Never);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("")]
     [DataRow("   ")]
     public async Task CreateAsync_InvalidName_Throws(string name)
@@ -90,7 +90,7 @@ public class ReceiptServiceTests
         var trip = MakeTrip();
         _trips.Setup(r => r.GetByIdAsync(trip.Id)).ReturnsAsync(trip);
 
-        await Assert.ThrowsExceptionAsync<ArgumentException>(
+        await Assert.ThrowsExactlyAsync<ArgumentException>(
             () => _sut.CreateAsync(trip.Id, name, new DateOnly(2026, 8, 25)));
 
         _receipts.Verify(r => r.AddAsync(It.IsAny<Receipt>()), Times.Never);
@@ -113,14 +113,14 @@ public class ReceiptServiceTests
         var id = Guid.NewGuid();
         _receipts.Setup(r => r.GetByIdAsync(id)).ReturnsAsync((Receipt?)null);
 
-        await Assert.ThrowsExceptionAsync<ReceiptNotFoundException>(
+        await Assert.ThrowsExactlyAsync<ReceiptNotFoundException>(
             () => _sut.GetByIdAsync(id));
     }
 
     [TestMethod]
     public async Task GetByIdAsync_EmptyId_Throws()
     {
-        await Assert.ThrowsExceptionAsync<ArgumentException>(
+        await Assert.ThrowsExactlyAsync<ArgumentException>(
             () => _sut.GetByIdAsync(Guid.Empty));
 
         _receipts.Verify(r => r.GetByIdAsync(It.IsAny<Guid>()), Times.Never);
@@ -141,7 +141,7 @@ public class ReceiptServiceTests
     [TestMethod]
     public async Task GetByTripAsync_EmptyId_Throws()
     {
-        await Assert.ThrowsExceptionAsync<ArgumentException>(
+        await Assert.ThrowsExactlyAsync<ArgumentException>(
             () => _sut.GetByTripAsync(Guid.Empty));
 
         _receipts.Verify(r => r.GetByTripAsync(It.IsAny<Guid>()), Times.Never);
@@ -165,7 +165,7 @@ public class ReceiptServiceTests
         var id = Guid.NewGuid();
         _receipts.Setup(r => r.GetByIdAsync(id)).ReturnsAsync((Receipt?)null);
 
-        await Assert.ThrowsExceptionAsync<ReceiptNotFoundException>(
+        await Assert.ThrowsExactlyAsync<ReceiptNotFoundException>(
             () => _sut.DeleteAsync(id));
 
         _receipts.Verify(r => r.DeleteAsync(It.IsAny<Guid>()), Times.Never);
@@ -174,7 +174,7 @@ public class ReceiptServiceTests
     [TestMethod]
     public async Task DeleteAsync_EmptyId_Throws()
     {
-        await Assert.ThrowsExceptionAsync<ArgumentException>(
+        await Assert.ThrowsExactlyAsync<ArgumentException>(
             () => _sut.DeleteAsync(Guid.Empty));
 
         _receipts.Verify(r => r.GetByIdAsync(It.IsAny<Guid>()), Times.Never);

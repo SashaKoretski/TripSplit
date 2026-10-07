@@ -19,6 +19,12 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- Unit tests (LAB01) need access to internal mapping classes and to the
+         testable IAmazonS3-based constructor overload without exposing them publicly. -->
+    <InternalsVisibleTo Include="TripSplit.DataAccess.Tests" />
+  </ItemGroup>
+
 	<ItemGroup>
 		<EmbeddedResource Include="Infrastructure\Sql\*.sql" />
 	</ItemGroup>

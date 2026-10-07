@@ -36,3 +36,4 @@ src/publish/
 # AI tools
 CLAUDE*
 tasks_web/
+tasks_test/

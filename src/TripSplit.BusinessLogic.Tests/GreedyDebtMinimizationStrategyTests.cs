@@ -16,7 +16,7 @@ public class GreedyDebtMinimizationStrategyTests
 
     [TestMethod]
     public void Minimize_Null_Throws() =>
-        Assert.ThrowsException<ArgumentNullException>(() => _sut.Minimize(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => _sut.Minimize(null!));
 
     [TestMethod]
     public void Minimize_Empty_ReturnsEmpty()
@@ -49,7 +49,7 @@ public class GreedyDebtMinimizationStrategyTests
             [Guid.NewGuid()] = 50m,
         };
 
-        Assert.ThrowsException<ArgumentException>(() => _sut.Minimize(balances));
+        Assert.ThrowsExactly<ArgumentException>(() => _sut.Minimize(balances));
     }
 
     [TestMethod]

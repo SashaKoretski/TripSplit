@@ -1,0 +1,66 @@
+Summary
+  Generated on: 06.10.2026 - 14:51:27
+  Coverage date: 06.10.2026 - 14:51:11 - 06.10.2026 - 14:51:20
+  Parser: MultiReport (2x Cobertura)
+  Assemblies: 2
+  Classes: 42
+  Files: 42
+  Line coverage: 89.2%
+  Covered lines: 1142
+  Uncovered lines: 138
+  Coverable lines: 1280
+  Total lines: 2037
+  Branch coverage: 91.9% (502 of 546)
+  Covered branches: 502
+  Total branches: 546
+  Method coverage: 94.6% (177 of 187)
+  Full method coverage: 80.2% (150 of 187)
+  Covered methods: 177
+  Fully covered methods: 150
+  Total methods: 187
+
+TripSplit.BusinessLogic                                                     98.3%
+  TripSplit.BusinessLogic.Configuration.DebtSettlementOptions                100%
+  TripSplit.BusinessLogic.Configuration.ReceiptImageOptions                  100%
+  TripSplit.BusinessLogic.Models.Exceptions.ExpenseNotFoundException         100%
+  TripSplit.BusinessLogic.Models.Exceptions.InvalidExpenseException          100%
+  TripSplit.BusinessLogic.Models.Exceptions.InvalidReceiptImageException     100%
+  TripSplit.BusinessLogic.Models.Exceptions.ReceiptImageNotFoundException    100%
+  TripSplit.BusinessLogic.Models.Exceptions.ReceiptNotFoundException         100%
+  TripSplit.BusinessLogic.Models.Exceptions.TripAlreadyFinishedException     100%
+  TripSplit.BusinessLogic.Models.Exceptions.TripNotFoundException            100%
+  TripSplit.BusinessLogic.Models.Exceptions.UserNotFoundException            100%
+  TripSplit.BusinessLogic.Models.Expense                                     100%
+  TripSplit.BusinessLogic.Models.Receipt                                     100%
+  TripSplit.BusinessLogic.Models.ReceiptImage                               90.3%
+  TripSplit.BusinessLogic.Models.Transfer                                    100%
+  TripSplit.BusinessLogic.Models.Trip                                        100%
+  TripSplit.BusinessLogic.Models.TripStatistics                              100%
+  TripSplit.BusinessLogic.Models.User                                        100%
+  TripSplit.BusinessLogic.Services.DebtSettlementService                     100%
+  TripSplit.BusinessLogic.Services.ExpenseService                            100%
+  TripSplit.BusinessLogic.Services.GreedyDebtMinimizationStrategy           93.8%
+  TripSplit.BusinessLogic.Services.ReceiptImageService                      94.3%
+  TripSplit.BusinessLogic.Services.ReceiptService                            100%
+  TripSplit.BusinessLogic.Services.TripService                               100%
+  TripSplit.BusinessLogic.Services.UserService                               100%
+
+TripSplit.DataAccess                                                        82.2%
+  TripSplit.DataAccess.Infrastructure.DatabaseInitializer                    100%
+  TripSplit.DataAccess.Infrastructure.Exceptions.DuplicateKeyException         0%
+  TripSplit.DataAccess.Infrastructure.Exceptions.EntityNotFoundException     100%
+  TripSplit.DataAccess.Infrastructure.Exceptions.RepositoryException          50%
+  TripSplit.DataAccess.Infrastructure.Exceptions.StorageException            100%
+  TripSplit.DataAccess.Infrastructure.NpgsqlConnectionFactory                  0%
+  TripSplit.DataAccess.Mapping.ExpenseMapper                                 100%
+  TripSplit.DataAccess.Mapping.ReceiptImageMapper                            100%
+  TripSplit.DataAccess.Mapping.ReceiptMapper                                 100%
+  TripSplit.DataAccess.Mapping.TripMapper                                    100%
+  TripSplit.DataAccess.Mapping.UserMapper                                    100%
+  TripSplit.DataAccess.Repositories.ExpenseRepository                       85.7%
+  TripSplit.DataAccess.Repositories.ReceiptImageRepository                  78.3%
+  TripSplit.DataAccess.Repositories.ReceiptRepository                       78.2%
+  TripSplit.DataAccess.Repositories.TripRepository                            85%
+  TripSplit.DataAccess.Repositories.UserRepository                          77.6%
+  TripSplit.DataAccess.Storage.S3FileStorageService                         72.1%
+  TripSplit.DataAccess.Storage.S3StorageOptions                                0%

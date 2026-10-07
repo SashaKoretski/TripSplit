@@ -1,0 +1,511 @@
+ЛР 1 — Unit-тесты, покрытие и отчётность
+Исходный PDF: "ТИОПО, ЛР №1.pdf" (полный текст — в tasks_test/LAB01.md, раздел
+"Исходные условия из PDF — без сокращения").
+Дата проверки (отдельный финальный проход): 2026-10-06.
+Состояние репозитория: commit c6dfd09b4bebdee613551a2932a1260030c65aeb (ветка lab1_test,
+"2026-09-24 11:57:42 +0300"), поверх него — незакоммиченные изменения этой лабораторной
+(ничего не закоммичено и не запушено по условию задачи): изменены 14 существующих файлов
+(тестовые csproj, существующие тестовые классы — переименование Assert API под MSTest 4.x,
+[Trait("Category","Integration")] на интеграционных тестах, DatabaseInitializer.cs,
+S3FileStorageService.cs), добавлены новые тестовые файлы/папки (BusinessLogic.Tests/Models,
+BusinessLogic.Tests/TestSupport, *ClassicalTests.cs, random-order.runsettings;
+DataAccess.Tests/{Mapping,Repositories,Infrastructure,Storage,TestDoubles,TestSupport},
+allureConfig.json), docs/LAB01.md и artifacts/lab01/** (логи, TRX, HTML-отчеты Allure и
+покрытия). tasks_test/ — материалы задания, не относится к реализации.
+Стек: .NET 8 / C# (TripSplit — ASP.NET Core MVC + PostgreSQL + S3/MinIO). Тесты бизнес-логики
+— MSTest 4.3.2 + Moq 4.20.72 (TripSplit.BusinessLogic.Tests). Тесты доступа к данным — xUnit
+2.6.6 (TripSplit.DataAccess.Tests). Покрытие — coverlet.collector 6.x + cobertura +
+reportgenerator 5.5.11. Отчёт о прогоне — Allure (xUnit-проект) и TRX (MSTest-проект, см. Т9).
+dotnet SDK 9.0.317 (целевой TFM проектов — net8.0), Docker 29.7.2, Node 22.14.0, npm 10.9.2,
+Java 11 (для allure-commandline). Общие условия запуска: рабочая директория src/ для команд
+dotnet (если не указано иное); переменные среды не требуются для unit-тестов (все они
+работают полностью в памяти — см. Т11). Полный перечень команд — docs/LAB01.md, раздел 4.
+
+================================================================================
+Примечания (П1–П4)
+================================================================================
+
+1. ID: П1
+   Требование: объект тестирования — любой многокомпонентный проект, изученный студентом;
+   если проект сильно отличается от предполагаемого курсами ППО/курсовой по БД — согласовать
+   с преподавателем.
+   Статус: НЕ ПРИМЕНИМО (условие не выполняется — согласование не требуется).
+   Объяснение: TripSplit — обычный многокомпонентный проект с разделением на
+   BusinessLogic/DataAccess/WebUI/ConsoleUI/TelegramBot, реальным PostgreSQL-доступом без ORM
+   и S3-хранилищем (README.md:91-101) — ровно та форма проекта, для которой задание
+   сформулировано (курсовая по БД), отличий, требующих согласования, не обнаружено.
+   Проверка: чтение README.md и структуры src/ (см. docs/LAB01.md, таблицы в разделе 1).
+   Доказательство запуска: не применимо (документационная проверка).
+   Ограничения: нет.
+
+2. ID: П2
+   Требование: проект и тесты могут быть на любых языках программирования.
+   Статус: НЕ ПРИМЕНИМО.
+   Объяснение: весь стек — C#/.NET 8, единый язык для кода и тестов; условие про разные языки
+   не возникает.
+   Проверка: -
+   Доказательство запуска: -
+   Ограничения: нет.
+
+3. ID: П3
+   Требование: не делать свой фреймворк для unit-тестов — использовать рекомендованный для
+   языка.
+   Статус: ВЫПОЛНЕНО.
+   Реализация: src/TripSplit.BusinessLogic.Tests/TripSplit.BusinessLogic.Tests.csproj:13-14
+   (MSTest.TestAdapter/TestFramework 4.3.2); src/TripSplit.DataAccess.Tests/TripSplit.DataAccess.Tests.csproj:20
+   (xunit 2.6.6) — оба входят в официальный список .NET unit-test фреймворков (MSTest/xUnit),
+   кастомный раннер не писался.
+   Объяснение: используются штатные атрибуты ([TestClass]/[TestMethod] и [Fact]/[Theory]),
+   штатные Assert-API, штатные CLI-раннеры (vstest.console через dotnet test).
+   Проверка: `dotnet test` отрабатывает штатным образом (см. Т13).
+   Доказательство запуска: artifacts/lab01/test-results/*.trx.
+   Ограничения: нет.
+
+4. ID: П4
+   Требование: не делать свою утилиту расчёта покрытия — использовать рекомендованную.
+   Статус: ВЫПОЛНЕНО.
+   Реализация: coverlet.collector в обоих тестовых csproj (BusinessLogic.Tests.csproj:16-19,
+   DataAccess.Tests.csproj:14) + dotnet-reportgenerator-globaltool 5.5.11 для агрегации.
+   Объяснение: coverlet — стандартный, рекомендованный для .NET инструмент покрытия (аналог
+   coverage.py из примера PDF), reportgenerator — его официальный компаньон для HTML/текстовых
+   сводок; собственный инструмент не писался.
+   Проверка: `dotnet test --collect:"XPlat Code Coverage"` + `reportgenerator` (команды —
+   docs/LAB01.md, раздел 4).
+   Доказательство запуска: artifacts/lab01/coverage/report/Summary.txt:1-21.
+   Ограничения: нет.
+
+================================================================================
+Задание (З1–З3)
+================================================================================
+
+5. ID: З1
+   Требование: написать unit-тесты для компонентов доступа к данным и бизнес-логики.
+   Статус: ВЫПОЛНЕНО.
+   Реализация: бизнес-логика — src/TripSplit.BusinessLogic.Tests/*.cs и
+   src/TripSplit.BusinessLogic.Tests/Models/*.cs (188 тестов); доступ к данным —
+   src/TripSplit.DataAccess.Tests/{Mapping,Repositories,Infrastructure,Storage}/*.cs
+   (96 unit-тестов, без обращения к реальной БД/сети — см. границу слоя данных в Т1.b).
+   Объяснение: покрыты все 6 сервисов и 7 моделей бизнес-логики и все 5 репозиториев +
+   5 мапперов + DatabaseInitializer + S3FileStorageService слоя данных — полная таблица
+   классов/методов/suite в docs/LAB01.md, раздел 1.
+   Проверка: `dotnet test TripSplit.BusinessLogic.Tests` и
+   `dotnet test TripSplit.DataAccess.Tests --filter "Category!=Integration"`.
+   Доказательство запуска: artifacts/lab01/logs/businesslogic-full-run.log (188 passed),
+   artifacts/lab01/logs/dataaccess-unit-full-run.log (96 passed).
+   Ограничения: нет.
+
+6. ID: З2
+   Требование: подключить автоматический расчёт покрытия (инструмент аналогичный
+   coverage.py).
+   Статус: ВЫПОЛНЕНО.
+   Реализация: см. П4. Конфигурация — PackageReference coverlet.collector в обоих тестовых
+   csproj; агрегация двух cobertura.xml в единый отчёт — docs/LAB01.md, раздел 4.
+   Объяснение: команда `dotnet test --collect:"XPlat Code Coverage"` генерирует
+   coverage.cobertura.xml с построчным и branch-покрытием на каждый прогон.
+   Проверка: см. Т14 (там же фактические числа).
+   Доказательство запуска: artifacts/lab01/coverage/businesslogic/*/coverage.cobertura.xml,
+   artifacts/lab01/coverage/dataaccess/*/coverage.cobertura.xml.
+   Ограничения: нет.
+
+7. ID: З3
+   Требование: определить технику подготовки тестовых данных для каждого теста (граничные
+   значения, переходы состояний, комбинаторное/попарное и т.д.).
+   Статус: ВЫПОЛНЕНО.
+   Реализация: docs/LAB01.md, раздел 2 ("Таблица техник подготовки тестовых данных") — 10
+   представительных строк формата "тест → техника → почему", покрывающих все используемые в
+   проекте техники: граничные значения (ExpenseTests.cs:46-73 — value/discount на границе 0 и
+   на границе discount==value), классы эквивалентности (UserServiceTests.cs:82-96 — 6
+   DataRow на пустые/пробельные строки), переходы состояний
+   (GreedyDebtMinimizationStrategyTests.cs:88-128 и TripServiceTests.cs:168-180,227-237),
+   комбинаторный полный перебор (ExpenseMapperTests.cs:61-70 — все 5 значений ExpenseType),
+   тестирование исключений как отдельная техника (S3FileStorageServiceTests.cs:33-40,68-76).
+   Объяснение: техника указана не одной общей фразой на весь набор, а для каждой смысловой
+   группы тестов отдельно, с привязкой к конкретному коду и обоснованием выбора.
+   Проверка: ручная сверка таблицы с кодом тестов (сделана при составлении этого отчёта).
+   Доказательство запуска: не применимо (документационный артефакт), код тестов — через Т13.
+   Ограничения: нет.
+
+================================================================================
+Требования (Т1–Т15)
+================================================================================
+
+8. ID: Т1.a (бизнес-логика)
+   Требование: минимум один test suite на класс и минимум 2 теста (позитив+негатив) на
+   каждый public-метод каждого класса основных компонентов бизнес-логики.
+   Статус: ВЫПОЛНЕНО.
+   Реализация: 6 сервисов (UserService, TripService, ExpenseService, ReceiptService,
+   ReceiptImageService, DebtSettlementService) + GreedyDebtMinimizationStrategy + 7 моделей
+   (Trip, User, Expense, Receipt, ReceiptImage, Transfer, TripStatistics) — по одному suite на
+   класс, см. полную таблицу в docs/LAB01.md:9-26. Примеры: UserService — 4 public-метода,
+   suite src/TripSplit.BusinessLogic.Tests/UserServiceTests.cs (1-192), каждый метод имеет
+   позитивный и как минимум один негативный тест (напр. GetByIdAsync:
+   GetByIdAsync_ExistingUser_ReturnsUser (строка 99) и
+   GetByIdAsync_NotFound_ThrowsUserNotFoundException (111) +
+   GetByIdAsync_EmptyId_ThrowsArgumentException (121)). ReceiptImageService.GetByReceiptAsync
+   — метод, изначально не имевший прямого теста (пробел, найденный на отдельной
+   перепроверке) — добавлены
+   GetByReceiptAsync_ImageExists_ReturnsIt (ReceiptImageServiceTests.cs:136) и
+   GetByReceiptAsync_EmptyReceiptId_ThrowsArgumentException (147).
+   Объяснение: private/protected методы (EnsureParticipants, ComputeBalances и т.п.) прямых
+   тестов не имеют (Т6), их поведение проверено через вызывающие их public-методы.
+   Проверка: `dotnet test TripSplit.BusinessLogic.Tests` — 188 тестов, все зелёные; также
+   method coverage по reportgenerator.
+   Доказательство запуска: artifacts/lab01/logs/businesslogic-full-run.log:1-12;
+   artifacts/lab01/coverage/report/Summary.txt:22-46 (большинство классов бизнес-логики —
+   100%, GreedyDebtMinimizationStrategy 93.8%/ReceiptImageService 94.3% за счёт отдельных
+   defensive-веток, не публичных методов без теста).
+   Ограничения: нет.
+
+9. ID: Т1.b (доступ к данным)
+   Требование: то же самое для компонентов доступа к данным; если стиль не объектный —
+   выделить модули по структуре программы.
+   Статус: ВЫПОЛНЕНО.
+   Реализация: 5 репозиториев (User/Trip/Expense/Receipt/ReceiptImage) + 5 мапперов +
+   DatabaseInitializer + S3FileStorageService — каждый со своим unit-suite в
+   src/TripSplit.DataAccess.Tests/{Repositories,Mapping,Infrastructure,Storage}/*.cs, без
+   обращения к реальной БД (см. обоснование границы в З1/в docs/LAB01.md, раздел 1,
+   последний абзац). Пример: UserRepository — 6 public-методов, suite
+   Repositories/UserRepositoryUnitTests.cs:1-209, на каждый метод минимум 2 теста (напр.
+   AddAsync_ValidUser_ExecutesInsertWithAllParameters (строка 121) и
+   AddAsync_Null_ThrowsArgumentNullException (136)). Пробел, найденный на отдельной
+   перепроверке: TripRepository.GetAllAsync имел только позитивный тест — добавлен
+   GetAllAsync_NoTrips_ReturnsEmptyListWithoutLoadingParticipants
+   (Repositories/TripRepositoryUnitTests.cs:85).
+   Объяснение: репозитории тестируются через поддельный (не реальный) ADO.NET-стек
+   (TestDoubles/FakeAdo.cs:1-253: FakeDbConnection/FakeDbCommand/FakeDbDataReader и т.д.) —
+   это дает настоящие unit-тесты (без сети/БД), покрывающие SQL/маппинг/валидацию аргументов
+   и доменные исключения (EntityNotFoundException и т.п.), но не ветки перевода
+   PostgresException (см. границу в З1).
+   Проверка: `dotnet test TripSplit.DataAccess.Tests --filter "Category!=Integration"` — 96
+   тестов.
+   Доказательство запуска: artifacts/lab01/logs/dataaccess-unit-full-run.log:1-12;
+   coverage Summary.txt:48-66 (мапперы — 100%, репозитории 77.6-85% за счёт непокрываемых без
+   реального Postgres catch-веток).
+   Ограничения: ветки catch (PostgresException e) when (UniqueViolation) не покрыты unit-тестом
+   принципиально (PostgresException не создаётся вручную) — покрыты интеграционным тестом
+   UserRepositoryTests.AddAsync_Duplicate_Email_Throws_DuplicateKey
+   (src/TripSplit.DataAccess.Tests/UserRepositoryTests.cs:64-72), который требует реальный
+   Postgres и вне строгого unit-scope этой лабораторной (см. Т8/Т13 про интеграционный прогон).
+
+10. ID: Т2
+    Требование: тесты на обработку исключений (ожидаемый результат — Exception).
+    Статус: ВЫПОЛНЕНО.
+    Реализация: практически в каждом *Tests.cs есть минимум один `Assert.ThrowsExactly(Async)`
+    — например ExpenseServiceTests.cs (28 вхождений ThrowsExactly), TripTests.cs:33
+    (Ctor_EmptyId_ThrowsArgumentException), S3FileStorageServiceTests.cs:33-40
+    (UploadAsync_S3Throws_WrapsIntoStorageException — перевод чужого исключения в доменное).
+    Объяснение: проверяются как "свои" доменные исключения (UserNotFoundException,
+    TripAlreadyFinishedException, InvalidExpenseException, EntityNotFoundException,
+    DuplicateKeyException), так и системные (ArgumentException/ArgumentNullException).
+    Проверка: `dotnet test` (оба проекта) — все такие тесты зелёные.
+    Доказательство запуска: artifacts/lab01/logs/businesslogic-full-run.log,
+    artifacts/lab01/logs/dataaccess-unit-full-run.log.
+    Ограничения: нет.
+
+11. ID: Т3
+    Требование: тесты как в классическом (без mock/stub), так и в "Лондонском" варианте;
+    допустимо дублирование одного теста в обоих вариантах.
+    Статус: ВЫПОЛНЕНО.
+    Реализация: Лондонский вариант — везде, где зависимости — интерфейсы репозиториев,
+    замоканные через Moq (напр. UserServiceTests.cs — Mock<IUserRepository>). Классический
+    вариант — два отдельных файла-пары с явной перекрёстной ссылкой в комментариях:
+    src/TripSplit.BusinessLogic.Tests/UserServiceClassicalTests.cs:1-56 (fake
+    InMemoryUserRepository вместо Moq, проверка состояния, а не Verify) дублирует 3 сценария
+    из UserServiceTests.cs; src/TripSplit.BusinessLogic.Tests/TripServiceClassicalTests.cs:1-71
+    дублирует 3 сценария из TripServiceTests.cs. Fakes —
+    TestSupport/InMemoryRepositories.cs:1-75. Отдельно GreedyDebtMinimizationStrategyTests.cs
+    (1-153) изначально полностью классический (SUT без зависимостей, mock не нужен).
+    Объяснение: разница явно видна и прокомментирована в коде — Лондонский стиль проверяет
+    взаимодействие (`_users.Verify(r => r.AddAsync(...), Times.Once)`), классический — читает
+    реальное состояние fake-репозитория после вызова (`await _users.GetByIdAsync(user.Id)`).
+    Проверка: `dotnet test --filter "FullyQualifiedName~Classical"` — отдельно прогналось.
+    Доказательство запуска: включено в общий прогон, artifacts/lab01/logs/businesslogic-full-run.log
+    (188 тестов включают все Classical-тесты, все passed).
+    Ограничения: нет.
+
+12. ID: Т4
+    Требование: структура Arrange-Act-Assert в каждом тесте, с использованием fixture и
+    классов/методов-хелперов.
+    Статус: ВЫПОЛНЕНО.
+    Реализация: все unit-тесты (оба проекта) оформлены по AAA (видно по пустым строкам между
+    блоками во всех приведённых примерах, например TripTests.cs:16-30). Fixture/хелперы:
+    [TestInitialize]/Setup() в каждом MSTest-классе (напр. UserServiceTests.cs:16-21),
+    общие билдеры TestSupport/Builders.cs:1-91, Object Mother TestSupport/ObjectMother.cs:1-45,
+    fakes TestSupport/InMemoryRepositories.cs, FakeAdo.cs. Для интеграционных xUnit-тестов —
+    DatabaseFixture.cs (не относится к unit-scope ЛР1, но сохранена структура).
+    Объяснение: Act — единственный вызов тестируемого публичного метода (await _sut.Xxx(...)),
+    остальное — в Arrange (включая билдеры/Object Mother) или Assert.
+    Проверка: выборочная ручная сверка (сделана при составлении отчёта), см. примеры выше.
+    Доказательство запуска: -
+    Ограничения: нет.
+
+13. ID: Т5
+    Требование: если public-метод нельзя вызвать в одиночку в Act — переписать класс.
+    Статус: ВЫПОЛНЕНО (рефакторинг применён там, где это было необходимо).
+    Реализация: S3FileStorageService изначально создавал реальный AmazonS3Client прямо в
+    публичном конструкторе (src/TripSplit.DataAccess/Storage/S3FileStorageService.cs,
+    исходные строки 16-31) — это делало Act (вызов UploadAsync/DeleteAsync/
+    GetPresignedUrlAsync) невозможным в изоляции от реальной сети. Добавлен internal
+    конструктор, принимающий IAmazonS3 (S3FileStorageService.cs:35-41), публичный конструктор
+    не менялся и делегирует в тот же приватный код построения реального клиента — поведение
+    продакшен-пути сохранено. Это дало возможность теста
+    Storage/S3FileStorageServiceTests.cs:1-87 с Moq<IAmazonS3> вместо реального AWS SDK.
+    Объяснение: доступ из тестовой сборки — через InternalsVisibleTo
+    (src/TripSplit.DataAccess/TripSplit.DataAccess.csproj:25).
+    Проверка: `dotnet test TripSplit.DataAccess.Tests --filter "FullyQualifiedName~S3FileStorageServiceTests"`.
+    Доказательство запуска: входит в artifacts/lab01/logs/dataaccess-unit-full-run.log (6/6
+    passed).
+    Ограничения: остальные классы (сервисы/репозитории) с самого начала проектировались через
+    DI интерфейсов, рефакторинг под тестируемость им не потребовался.
+
+14. ID: Т6
+    Требование: на приватные и защищённые методы тесты не нужны.
+    Статус: ВЫПОЛНЕНО (как ограничение — тесты на private/protected не писались).
+    Реализация: ни в одном *Tests.cs нет прямого вызова private/protected члена (проверено —
+    все вызовы идут через `_sut.<PublicMethod>` или конструктор). Примеры непротестированных
+    напрямую private-методов: ExpenseService.EnsureParticipants/EnsureReceiptBelongsToTripAsync,
+    DebtSettlementService.ComputePerUserSpent/ComputeBalances, UserRepository.FindSingleAsync/
+    ExecuteAsync/AddParameters — их поведение проверяется только через публичные методы.
+    Объяснение: соответствует формулировке PDF буквально.
+    Проверка: ручная сверка (grep по `private`/`protected` методам классов и их отсутствию в
+    тестах).
+    Доказательство запуска: -
+    Ограничения: нет.
+
+15. ID: Т7
+    Требование: тесты с использованием Data Builder и Fabric(Object Mother).
+    Статус: ВЫПОЛНЕНО.
+    Реализация: Data Builder — src/TripSplit.BusinessLogic.Tests/TestSupport/Builders.cs:1-91
+    (UserBuilder:11, TripBuilder:26, ExpenseBuilder:52, ReceiptBuilder:78 — все с фабричными
+    умолчаниями и fluent .With...()). Fabric/Object Mother —
+    TestSupport/ObjectMother.cs:1-45 (Sasha/Masha/Misha, ActiveTripWithThreeParticipants,
+    FinishedTrip, DinnerForTwo — именованные "жизненные" сценарии). Фактически используются
+    тестами, не просто объявлены: TripTests.cs:59 (ObjectMother.ActiveTripWithThreeParticipants),
+    UserTests.cs:53 (UserBuilder), ExpenseTests.cs:106 (ExpenseBuilder), ReceiptTests.cs:41
+    (ReceiptBuilder), TripServiceClassicalTests.cs:33,48-49 (ObjectMother.Sasha/Masha).
+    Объяснение: оба паттерна явно разделены по назначению в doc-комментариях в самих файлах —
+    Builder для точечной настройки одного объекта, Object Mother для готовых повторяющихся
+    сценариев.
+    Проверка: `dotnet test --filter "FullyQualifiedName~ObjectMother|FullyQualifiedName~Builder"`.
+    Доказательство запуска: входит в общий прогон (188/188 passed),
+    artifacts/lab01/logs/businesslogic-full-run.log.
+    Ограничения: нет.
+
+16. ID: Т8
+    Требование: настроен запуск тестов из командной строки на основании локальной копии
+    репозитория (пункт также покрывает генерацию отчёта, см. Т9).
+    Статус: ВЫПОЛНЕНО.
+    Реализация: штатные csproj + `dotnet test`, команды — docs/LAB01.md, раздел 4. Не
+    требуется ничего, кроме `dotnet restore`/`dotnet test` из каталога src/.
+    Объяснение: оба тестовых проекта собираются и запускаются стандартными командами dotnet
+    CLI без дополнительной настройки окружения (кроме опциональных TRIPSPLIT_TEST_DB для
+    интеграционных тестов, см. Т1.b).
+    Проверка: `dotnet test TripSplit.BusinessLogic.Tests/TripSplit.BusinessLogic.Tests.csproj`;
+    `dotnet test TripSplit.DataAccess.Tests/TripSplit.DataAccess.Tests.csproj --filter "Category!=Integration"`.
+    Доказательство запуска: artifacts/lab01/logs/businesslogic-full-run.log,
+    artifacts/lab01/logs/dataaccess-unit-full-run.log (оба — чистая локальная копия, commit
+    c6dfd09 + untracked изменения этой ЛР).
+    Ограничения: нет.
+
+17. ID: Т9
+    Требование: автоматически сгенерированный отчёт по результатам тестов (рекомендуется
+    Allure); генерация должна быть учтена в Т8.
+    Статус: ВЫПОЛНЕНО (Allure для xUnit-проекта; TRX — для MSTest-проекта, см. объяснение).
+    Реализация: TripSplit.DataAccess.Tests — пакет Allure.Xunit 2.15.0
+    (TripSplit.DataAccess.Tests.csproj:13) + allureConfig.json + генерация HTML через
+    `npx allure-commandline generate ... --clean`; готовый отчёт —
+    artifacts/lab01/allure-report-dataaccess/index.html (96 тест-кейсов,
+    data/test-cases/*.json). TripSplit.BusinessLogic.Tests (MSTest) — официального Allure-
+    адаптера для MSTest не существует (Allure поддерживает NUnit/xUnit/Reqnroll-SpecFlow, но
+    не "голый" MSTest — проверено поиском по NuGet: пакет Allure.MSTest не существует).
+    Использован штатный автоматический отчёт MSTest/VSTest — TRX
+    (`--logger "trx;LogFileName=businesslogic-results.trx"`) —
+    artifacts/lab01/test-results/businesslogic-results.trx (188 UnitTestResult-записей).
+    Объяснение: PDF явно формулирует Allure как рекомендацию ("рекомендуется использовать"), а
+    не обязательное условие — TRX такой же "автоматически сгенерированный отчёт по результатам
+    выполнения тестов" для фреймворка, где Allure недоступен.
+    Проверка: регенерация отчёта командами из docs/LAB01.md, раздел 4 (выполнена повторно на
+    финальном прогоне — 96 тест-кейсов в отчёте совпадают с 96 passed).
+    Доказательство запуска: artifacts/lab01/allure-report-dataaccess/index.html;
+    artifacts/lab01/test-results/businesslogic-results.trx,
+    artifacts/lab01/test-results/dataaccess-unit-results.trx.
+    Ограничения: для BusinessLogic.Tests — Allure недоступен по объективной причине (нет
+    адаптера под MSTest), не блокирующее ограничение.
+
+18. ID: Т10
+    Требование: предусмотреть запуск тестов в случайном порядке.
+    Статус: ВЫПОЛНЕНО.
+    Реализация: MSTest (4.3.2) — штатная настройка `<MSTest><RandomizeTestOrder>true</...>`
+    в src/TripSplit.BusinessLogic.Tests/random-order.runsettings:9-11 (потребовало апгрейда
+    MSTest.TestFramework/TestAdapter 3.6.1→4.3.2, т.к. функция появилась в MSTest 4.3 —
+    попутно переименован Assert.ThrowsException(Async) → Assert.ThrowsExactly(Async) в 7
+    файлах, т.к. старые имена убраны в MSTest 4.x). xUnit — собственный
+    ITestCaseOrderer с Фишер-Йетс перемешиванием и воспроизводимым seed:
+    src/TripSplit.DataAccess.Tests/TestSupport/RandomOrderer.cs:1-39 (seed из
+    TRIPSPLIT_TEST_SEED или TickCount, печатается в stderr для повторяемости), подключен
+    на уровне сборки атрибутом в строке 5-6.
+    Объяснение: оба механизма реально запущены дважды с разными seed, чтобы подтвердить, что
+    порядок действительно меняется (а не просто "включен флаг").
+    Проверка: `dotnet test ... --settings random-order.runsettings` дважды;
+    `TRIPSPLIT_TEST_SEED=1|42 dotnet test ... --filter "FullyQualifiedName~ExpenseMapperTests"`.
+    Доказательство запуска: artifacts/lab01/logs/mstest-random-order-run1.log (Seed:
+    1851846137) и run2.log (Seed: 1107852849) — разный порядок прохождения тестов
+    UserServiceTests, оба 100% passed; artifacts/lab01/logs/xunit-random-order-seed1.log и
+    seed42.log — разный порядок прохождения ExpenseMapperTests, оба 10/10 passed.
+    Ограничения: нет.
+
+19. ID: Т11
+    Требование: предусмотреть запуск тестов в режиме без доступа к интернету — набор только с
+    mock должен проходить успешно.
+    Статус: ВЫПОЛНЕНО.
+    Реализация: фильтр `--filter "Category!=Integration"` на DataAccess.Tests исключает
+    единственные тесты, которым нужна реальная сеть/БД (UserRepositoryTests.cs:8 и
+    ExpenseRepositoryTests.cs:9, помеченные [Trait("Category","Integration")]). Все остальные
+    284 теста (188 BusinessLogic + 96 DataAccess) используют только Moq-моки (IUserRepository
+    и т.п.) или поддельный ADO.NET-стек в памяти (FakeAdo.cs) — ни один не открывает сокет,
+    не резолвит DNS и не обращается к файловой системе за пределами temp.
+    Объяснение: реальный офлайн-прогон проверен не переменной-пустышкой, а фактическим
+    отсутствием инфраструктуры: на момент прогона не было запущено ни одного Docker-контейнера
+    (ни Postgres, ни MinIO) — `docker ps` вернул пустой список контейнеров непосредственно
+    перед запуском, т.е. если бы какой-то unit-тест тайно пытался достучаться до реальной
+    БД/S3, он бы упал с connection refused, а не прошёл.
+    Проверка: `docker ps` (пусто) → `dotnet test TripSplit.DataAccess.Tests --filter
+    "Category!=Integration"` → `dotnet test TripSplit.BusinessLogic.Tests`.
+    Доказательство запуска: artifacts/lab01/logs/dataaccess-unit-full-run.log (96/96 passed,
+    без единого запущенного контейнера); artifacts/lab01/logs/businesslogic-full-run.log
+    (188/188 passed, Moq-only).
+    Ограничения: нет.
+
+20. ID: Т12
+    Требование: проверить, сколько процессов запускается на прогон всех unit-тестов
+    (отдельный процесс на все тесты/на класс/на тест и т.д.) — разобраться, чем это
+    конфигурируется, отразить в документации.
+    Статус: ВЫПОЛНЕНО.
+    Реализация: исследование и фактическое наблюдение — docs/LAB01.md, раздел 3. Коротко:
+    ровно один OS-процесс test host на одну тестовую сборку (csproj), а не на класс и не на
+    метод; при прогоне обоих тестовых проектов подряд (`dotnet test TripSplit.sln`) — два
+    testhost-процесса последовательно. Конфигурируется провайдером
+    Microsoft.TestPlatform.TestHostRuntimeProvider (DotnetTestHostmanager) внутри VSTest —
+    это его поведение по умолчанию для `dotnet test`.
+    Объяснение: внутри одного testhost-процесса конкурентность теста — потоковая, не
+    процессная (xUnit — параллельные test-коллекции по умолчанию; MSTest — последовательно,
+    т.к. `[assembly: Parallelize]` не установлен).
+    Проверка: `dotnet test ... --diag:<file>.log` — лог явно фиксирует создание ровно одного
+    testhost-процесса на сборку (по имени файла .host.<timestamp>_<PID>_<n>.log).
+    Доказательство запуска: artifacts/lab01/logs/process-count/diag-mstest.log +
+    diag-mstest.host.26-10-06_14-46-59_21385_5.log (1 testhost, PID 21385, 188 тестов);
+    artifacts/lab01/logs/process-count/diag-all.log + два .host.*.log файла (PID 34719 и
+    56782 — по одному на проект, старт в 14:47:45 и 14:47:49 соответственно).
+    Ограничения: нет.
+
+21. ID: Т13
+    Требование: тесты должны проходить успешно.
+    Статус: ВЫПОЛНЕНО.
+    Реализация: см. все перечисленные выше прогоны.
+    Объяснение: 188/188 (BusinessLogic, обычный порядок), 188/188 (BusinessLogic, случайный
+    порядок), 96/96 (DataAccess, офлайн/unit-only фильтр) — все зелёные, 0 упавших, 0
+    пропущенных, на финальном состоянии кода (после исправления трёх пробелов покрытия,
+    описанных в Т1.a/Т1.b). Полное решение (`dotnet build TripSplit.sln`, все 8 проектов
+    включая WebUI/TelegramBot/ConsoleUI) также компилируется без ошибок и предупреждений —
+    проверено после всех изменений, существующий веб-проект не сломан.
+    Проверка: повторный прогон в рамках отдельной финальной перепроверки (см. ниже раздел
+    "Итог отдельной перепроверки").
+    Доказательство запуска: artifacts/lab01/logs/businesslogic-full-run.log,
+    artifacts/lab01/logs/dataaccess-unit-full-run.log,
+    artifacts/lab01/logs/mstest-random-order-run1.log/run2.log.
+    Ограничения: 2 pre-existing интеграционных теста (UserRepositoryTests,
+    ExpenseRepositoryTests, [Trait("Category","Integration")]) не были прогнаны против
+    реального Postgres в рамках этой сессии — см. "Открытые проблемы" в конце файла. Это не
+    блокирует ЛР1 (которая требует unit-тесты), но оставлено прозрачно, а не скрыто.
+
+22. ID: Т14
+    Требование: настроен запуск оценки тестового покрытия из командной строки: вывести
+    покрытие и по строкам, и по ветвлениям.
+    Статус: ВЫПОЛНЕНО.
+    Реализация: команды — docs/LAB01.md, раздел 4 (`dotnet test --collect:"XPlat Code
+    Coverage"` + `reportgenerator -reporttypes:"Html;TextSummary"`).
+    Объяснение: PDF намеренно не задаёт минимальный процент (см. CLAUDE_TEST) — приводятся
+    фактические числа. Line coverage: 89.2% (1142/1280 строк). Branch coverage: 91.9% (502/546
+    ветвлений). Method coverage: 94.6% (177/187 методов имеют хотя бы один прогнанный путь).
+    Проверка: выполнено дважды (до и после устранения 3 пробелов из Т1), второй раз —
+    на финальном коде.
+    Доказательство запуска: artifacts/lab01/coverage/report/Summary.txt:1-21 (сводные числа),
+    artifacts/lab01/coverage/report/index.html (HTML-версия с разбивкой по классам и
+    подсветкой непокрытых строк/веток).
+    Ограничения: нет.
+
+23. ID: Т15
+    Требование: защита от регрессии, устойчивость к рефакторингу, легкость поддержки —
+    базовые принципы, которым стоит следовать (рекомендательный пункт).
+    Статус: РЕКОМЕНДАЦИЯ УЧТЕНА.
+    Реализация: тесты проверяют наблюдаемое поведение публичного контракта (результат/
+    исключение/состояние fake-репозитория), а не детали реализации — это даёт устойчивость к
+    рефакторингу. Общие билдеры/Object Mother/fakes (TestSupport/*, FakeAdo.cs) вынесены в
+    переиспользуемые файлы — упрощает поддержку (одно изменение модели не требует правки
+    каждого теста). Регрессия: 284 unit-теста без сети/БД выполняются за ~0.8 c суммарно — их
+    можно (и стоит) гонять на каждый коммит.
+    Объяснение: выбранное решение — приоритет state/behavior-проверок над чрезмерным
+    Verify-тестированием деталей вызовов там, где это не требуется напрямую заданием (Т3
+    специально требует оба стиля, остальное — по необходимости).
+    Проверка: -
+    Доказательство запуска: -
+    Ограничения: нет (рекомендательный пункт, конкретное "выполнено/не выполнено" к нему не
+    применяется).
+
+================================================================================
+Выполненные команды с кодами завершения (финальный проход)
+================================================================================
+
+- `dotnet build TripSplit.sln` (из src/) → exit 0, 8/8 проектов, 0 предупреждений.
+- `dotnet test TripSplit.BusinessLogic.Tests/TripSplit.BusinessLogic.Tests.csproj` → exit 0,
+  188 passed, 0 failed.
+- `dotnet test TripSplit.BusinessLogic.Tests/... --settings random-order.runsettings` → exit 0,
+  188 passed (дважды, разные seed, разный порядок — см. Т10).
+- `dotnet test TripSplit.DataAccess.Tests/TripSplit.DataAccess.Tests.csproj --filter
+  "Category!=Integration"` → exit 0, 96 passed, 0 failed, при остановленной Postgres/MinIO
+  инфраструктуре (см. Т11).
+- `dotnet test ... --collect:"XPlat Code Coverage"` (оба проекта) → exit 0, cobertura.xml
+  сгенерированы.
+- `reportgenerator -reporttypes:"Html;TextSummary"` → отчёт сгенерирован, см. Т14.
+- `npx allure-commandline generate ... --clean` → "Report successfully generated", см. Т9.
+
+================================================================================
+Результаты отдельной перепроверки
+================================================================================
+
+Выполнен отдельный проход после основной реализации (см. раздел "Задание"/"Требования" выше
+— это и есть результат перепроверки, не первоначальный план). В ходе перепроверки обнаружены и
+устранены 3 реальных пробела в покрытии методов (Т1.a/Т1.b):
+  1. ReceiptImageService.GetByReceiptAsync не имел прямых тестов — добавлены 2.
+  2. TripRepository.GetAllAsync имел только позитивный тест — добавлен тест на пустой список.
+  3. DatabaseInitializer не проверял null-аргумент конструктора (несогласованность с
+     остальными классами проекта, которые все null-проверяют зависимости) — добавлена
+     проверка и тест.
+После исправлений все связанные проверки повторены: пересобран весь solution, оба тестовых
+проекта прогнаны заново (188/96, все зелёные), покрытие и Allure-отчёт перегенерированы на
+финальном наборе тестов (не на устаревшем), чтобы цифры и файлы соответствовали друг другу.
+Секретов в коде/логах/командах нет: единственная "похожая на секрет" строка —
+default-значение строки подключения к ЛОКАЛЬНОЙ тестовой БД в
+src/TripSplit.DataAccess.Tests/DatabaseFixture.cs:8-10 (пароль "12345" для тестового
+контейнера Postgres) — это преднаследованный (до начала этой ЛР) файл интеграционных
+тестов, не относящийся к unit-scope ЛР1; переопределяется переменной окружения
+TRIPSPLIT_TEST_DB, реальных продакшен-секретов не содержит.
+
+Открытые проблемы:
+- Предпринята попытка поднять одноразовый Postgres-контейнер (docker run postgres:16-alpine)
+  для живого запуска уже существующих интеграционных тестов (UserRepositoryTests,
+  ExpenseRepositoryTests) — Docker Desktop в этой сессии вёл себя нестабильно (несколько
+  запусков `docker run` зависали на 20-30 секунд без вывода и без создания контейнера, при
+  этом `docker ps`/`docker info` отвечали нормально). Контейнер так и не поднялся надёжно за
+  разумное время; дальнейшие попытки прекращены, чтобы не тратить лимит сессии на
+  инфраструктурную прихоть, не являющуюся требованием ЛР1 (которая просит unit-, а не
+  integration-тесты). Эти 2 файла помечены [Trait("Category","Integration")] и честно не
+  прогнаны против реальной БД в этой сессии — статус не выдаётся за "выполнено".
+- Официального Allure-адаptera для MSTest не существует — для BusinessLogic.Tests
+  использован TRX вместо Allure (см. Т9, не блокирующее ограничение, т.к. Allure в PDF —
+  рекомендация).
+
+Итог: все обязательные применимые пункты ЛР1 (З1-З3, Т1-Т14, П1-П4) — ВЫПОЛНЕНО;
+Т15 — рекомендация учтена. Единственное незакрытое в этой сессии — живой прогон
+PRE-EXISTING интеграционных тестов против реального Postgres (вне scope unit-тестов ЛР1).
+С учётом этого — ГОТОВО К СДАЧЕ.

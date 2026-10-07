@@ -40,7 +40,7 @@ public class DebtSettlementServiceTests
     [TestMethod]
     public async Task Calculate_EmptyTripId_Throws()
     {
-        await Assert.ThrowsExceptionAsync<ArgumentException>(
+        await Assert.ThrowsExactlyAsync<ArgumentException>(
             () => _sut.CalculateSettlementAsync(Guid.Empty));
 
         _trips.Verify(r => r.GetByIdAsync(It.IsAny<Guid>()), Times.Never);
@@ -52,7 +52,7 @@ public class DebtSettlementServiceTests
         var tripId = Guid.NewGuid();
         _trips.Setup(r => r.GetByIdAsync(tripId)).ReturnsAsync((Trip?)null);
 
-        await Assert.ThrowsExceptionAsync<TripNotFoundException>(
+        await Assert.ThrowsExactlyAsync<TripNotFoundException>(
             () => _sut.CalculateSettlementAsync(tripId));
 
         _expenses.Verify(r => r.GetByTripAsync(It.IsAny<Guid>()), Times.Never);

@@ -23,7 +23,7 @@ public class UserServiceTests
     [TestMethod]
     public void Ctor_NullRepository_Throws()
     {
-        Assert.ThrowsException<ArgumentNullException>(() => new UserService(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new UserService(null!));
     }
 
     [TestMethod]
@@ -79,7 +79,7 @@ public class UserServiceTests
         _users.Verify(r => r.AddAsync(It.IsAny<User>()), Times.Never);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("", "e@e.com", "g")]
     [DataRow("  ", "e@e.com", "g")]
     [DataRow("a", "", "g")]
@@ -88,7 +88,7 @@ public class UserServiceTests
     [DataRow("a", "e@e.com", "  ")]
     public async Task RegisterAsync_InvalidArguments_Throws(string name, string email, string googleId)
     {
-        await Assert.ThrowsExceptionAsync<ArgumentException>(
+        await Assert.ThrowsExactlyAsync<ArgumentException>(
             () => _sut.RegisterAsync(name, email, googleId));
 
         _users.Verify(r => r.GetByGoogleIdAsync(It.IsAny<string>()), Times.Never);
@@ -113,14 +113,14 @@ public class UserServiceTests
         var id = Guid.NewGuid();
         _users.Setup(r => r.GetByIdAsync(id)).ReturnsAsync((User?)null);
 
-        await Assert.ThrowsExceptionAsync<UserNotFoundException>(
+        await Assert.ThrowsExactlyAsync<UserNotFoundException>(
             () => _sut.GetByIdAsync(id));
     }
 
     [TestMethod]
     public async Task GetByIdAsync_EmptyId_ThrowsArgumentException()
     {
-        await Assert.ThrowsExceptionAsync<ArgumentException>(
+        await Assert.ThrowsExactlyAsync<ArgumentException>(
             () => _sut.GetByIdAsync(Guid.Empty));
 
         _users.Verify(r => r.GetByIdAsync(It.IsAny<Guid>()), Times.Never);
@@ -147,12 +147,12 @@ public class UserServiceTests
         Assert.IsNull(result);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("")]
     [DataRow("   ")]
     public async Task FindByGoogleIdAsync_InvalidGoogleId_Throws(string googleId)
     {
-        await Assert.ThrowsExceptionAsync<ArgumentException>(
+        await Assert.ThrowsExactlyAsync<ArgumentException>(
             () => _sut.FindByGoogleIdAsync(googleId));
 
         _users.Verify(r => r.GetByGoogleIdAsync(It.IsAny<string>()), Times.Never);
@@ -179,12 +179,12 @@ public class UserServiceTests
         Assert.IsNull(result);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("")]
     [DataRow("   ")]
     public async Task FindByEmailAsync_InvalidEmail_Throws(string email)
     {
-        await Assert.ThrowsExceptionAsync<ArgumentException>(
+        await Assert.ThrowsExactlyAsync<ArgumentException>(
             () => _sut.FindByEmailAsync(email));
 
         _users.Verify(r => r.GetByEmailAsync(It.IsAny<string>()), Times.Never);

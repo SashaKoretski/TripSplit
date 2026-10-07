@@ -30,6 +30,17 @@ public sealed class S3FileStorageService : IFileStorageService, IDisposable
         _client = new AmazonS3Client(options.AccessKey, options.SecretKey, config);
     }
 
+    // Позволяет юнит-тестам подставить поддельный/замоканный IAmazonS3 вместо реального
+    // AWS-клиента (конструктор выше всегда создает настоящий AmazonS3Client).
+    internal S3FileStorageService(IAmazonS3 client, string bucket, bool useHttp)
+    {
+        _client = client ?? throw new ArgumentNullException(nameof(client));
+        if (string.IsNullOrWhiteSpace(bucket))
+            throw new ArgumentException("Bucket is required", nameof(bucket));
+        _bucket = bucket;
+        _useHttp = useHttp;
+    }
+
     public async Task UploadAsync(string key, Stream content, string contentType, CancellationToken ct = default)
     {
         try
