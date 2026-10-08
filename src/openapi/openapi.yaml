@@ -1,0 +1,1049 @@
+openapi: 3.1.0
+
+info:
+  title: TripSplit API
+  version: 1.0.0
+  summary: Публичный REST API для учета общих трат в поездках и расчета долгов
+  description: |
+    REST API для TripSplit - совместного учета расходов в поездках.
+
+    Это новый контракт, спроектированный с нуля: до WebLab#2 в проекте не было
+    публичного JSON API, Web UI - server-rendered ASP.NET Core MVC с cookie-сессией.
+    Контракт не заменяет Web UI и не является breaking change для него.
+
+    Авторизация API - отдельная от Web UI, через Bearer JWT (см. `/auth/token`).
+    Web UI продолжает использовать email + cookie-сессию (ADR-001, WebLab#1).
+
+servers:
+  - url: /api/v1
+    description: Относительный базовый путь текущей версии API
+
+tags:
+  - name: auth
+    description: Выдача токена доступа
+  - name: users
+    description: Регистрация и профиль пользователя
+  - name: trips
+    description: Поездки и их участники
+  - name: expenses
+    description: Траты поездки (полный CRUD + partial update)
+  - name: receipts
+    description: Чеки и их изображения
+  - name: settlement
+    description: Расчет итоговых долгов
+
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/token:
+    post:
+      tags: [auth]
+      operationId: issueAuthToken
+      summary: Получить access-токен по email
+      description: |
+        Вход без пароля (как и в Web UI): по email уже зарегистрированного
+        пользователя выдается JWT. Публичный эндпоинт, Bearer-токен не нужен.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthTokenRequest'
+            examples:
+              default:
+                value: { email: "anna@example.com" }
+      responses:
+        '200':
+          description: Токен выдан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthToken'
+              examples:
+                default:
+                  value: { accessToken: "eyJhbGciOiJIUzI1NiIs...", tokenType: "Bearer", expiresIn: 3600 }
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Пользователь с таким email не зарегистрирован
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Error' }
+              examples:
+                default:
+                  value: { type: "about:blank", title: "User not found", status: 404, code: "user_not_found", detail: "Аккаунт с такой почтой не найден" }
+
+  /users:
+    post:
+      tags: [users]
+      operationId: registerUser
+      summary: Регистрация пользователя
+      description: |
+        Создает нового пользователя. Если email уже зарегистрирован, бизнес-правило
+        BR-08 возвращает существующий аккаунт без создания дубликата -
+        в этом случае ответ `200 OK` вместо `201 Created` (ресурс не был создан этим вызовом).
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterUserRequest'
+            examples:
+              default:
+                value: { name: "Анна", email: "anna@example.com" }
+      responses:
+        '201':
+          description: Новый пользователь создан
+          headers:
+            Location:
+              schema: { type: string }
+              description: URL созданного пользователя
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '200':
+          description: Email уже был зарегистрирован - возвращен существующий аккаунт (BR-08)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /users/me:
+    get:
+      tags: [users]
+      operationId: getCurrentUser
+      summary: Текущий пользователь (по токену)
+      responses:
+        '200':
+          description: Профиль текущего пользователя
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/{userId}:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+    get:
+      tags: [users]
+      operationId: getUserById
+      summary: Профиль пользователя по id
+      responses:
+        '200':
+          description: Пользователь найден
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /trips:
+    get:
+      tags: [trips]
+      operationId: listTrips
+      summary: Список поездок текущего пользователя
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Страница поездок (пусто, если пользователь не состоит ни в одной)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TripPage' }
+              examples:
+                default:
+                  value:
+                    items:
+                      - { id: "11111111-1111-1111-1111-111111111111", name: "Тбилиси", currency: "GEL", status: "active", createdAt: "2026-05-01T10:00:00Z" }
+                    page: 1
+                    pageSize: 20
+                    total: 1
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      tags: [trips]
+      operationId: createTrip
+      summary: Создать поездку
+      description: Создатель автоматически становится первым участником (FR-004).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateTripRequest' }
+            examples:
+              default:
+                value: { name: "Тбилиси", currency: "GEL" }
+      responses:
+        '201':
+          description: Поездка создана
+          headers:
+            Location:
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Trip' }
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /trips/{tripId}:
+    parameters:
+      - $ref: '#/components/parameters/TripId'
+    get:
+      tags: [trips]
+      operationId: getTripById
+      summary: Детали поездки
+      description: Требует членства в поездке (целевое поведение; известный пробел в текущем Web UI - см. docs/api/review.md).
+      responses:
+        '200':
+          description: Поездка найдена
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Trip' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /trips/{tripId}/finish:
+    parameters:
+      - $ref: '#/components/parameters/TripId'
+    post:
+      tags: [trips]
+      operationId: finishTrip
+      summary: Завершить поездку
+      description: |
+        Необратимый переход `active -> finished` (BR-05). После завершения
+        новые траты и чеки создавать нельзя. Повторный вызов - `409 Conflict`.
+      responses:
+        '200':
+          description: Поездка завершена
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Trip' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Поездка уже завершена
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Error' }
+              examples:
+                default:
+                  value: { type: "about:blank", title: "Conflict", status: 409, code: "trip_already_finished", detail: "Поездка уже завершена" }
+
+  /trips/{tripId}/participants:
+    parameters:
+      - $ref: '#/components/parameters/TripId'
+    get:
+      tags: [trips]
+      operationId: listTripParticipants
+      summary: Участники поездки
+      responses:
+        '200':
+          description: Список участников
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/User' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      tags: [trips]
+      operationId: addTripParticipant
+      summary: Присоединиться самому или пригласить по email
+      description: |
+        Пустое тело `{}` - добавить текущего пользователя (self-join, FR-005).
+        Тело с `email` - пригласить уже зарегистрированного пользователя (FR-006,
+        BR-09); если email не зарегистрирован - `404`. Повторное добавление уже
+        состоящего участника идемпотентно: `200 OK` с уже существующей записью,
+        без создания дубликата (как и в `TripService.AddParticipantAsync`).
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AddParticipantRequest' }
+            examples:
+              selfJoin:
+                summary: Присоединиться самому
+                value: {}
+              inviteByEmail:
+                summary: Пригласить по email
+                value: { email: "boris@example.com" }
+      responses:
+        '201':
+          description: Участник добавлен
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '200':
+          description: Пользователь уже был участником - без изменений
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Поездка не найдена, либо приглашаемый email не зарегистрирован (BR-09)
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: Поездка уже завершена
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /trips/{tripId}/settlement:
+    parameters:
+      - $ref: '#/components/parameters/TripId'
+    get:
+      tags: [settlement]
+      operationId: getTripSettlement
+      summary: Итоговый баланс и переводы
+      description: |
+        Производный, не хранимый ресурс (BR-06): доступен в любом статусе
+        поездки, включая предварительный просмотр до завершения (SC-003, альт. A1).
+      responses:
+        '200':
+          description: Расчет посчитан
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Settlement' }
+              examples:
+                default:
+                  value:
+                    tripId: "11111111-1111-1111-1111-111111111111"
+                    totalSpent: 300.00
+                    perUserSpent: [{ userId: "22222222-2222-2222-2222-222222222222", amount: 200.00 }, { userId: "33333333-3333-3333-3333-333333333333", amount: 100.00 }]
+                    transfers: [{ fromUserId: "33333333-3333-3333-3333-333333333333", toUserId: "22222222-2222-2222-2222-222222222222", amount: 50.00 }]
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /trips/{tripId}/expenses:
+    parameters:
+      - $ref: '#/components/parameters/TripId'
+    get:
+      tags: [expenses]
+      operationId: listTripExpenses
+      summary: Список трат поездки
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Страница трат (пусто, если трат еще нет)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ExpensePage' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      tags: [expenses]
+      operationId: createExpense
+      summary: Добавить трату
+      description: Поездка должна быть активна (BR-05); плательщик и потребители - участники поездки (BR-10); чек, если указан, должен принадлежать той же поездке (BR-11).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateExpenseRequest' }
+            examples:
+              default:
+                value:
+                  name: "Ужин"
+                  type: "food"
+                  value: 60.00
+                  discount: 0
+                  payerId: "22222222-2222-2222-2222-222222222222"
+                  consumerIds: ["22222222-2222-2222-2222-222222222222", "33333333-3333-3333-3333-333333333333"]
+      responses:
+        '201':
+          description: Трата создана
+          headers:
+            Location:
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Expense' }
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Поездка уже завершена
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422':
+          description: Нарушено бизнес-правило (BR-02, BR-03, BR-10 или BR-11)
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Error' }
+              examples:
+                default:
+                  value: { type: "about:blank", title: "Unprocessable Entity", status: 422, code: "invalid_expense", detail: "Discount cannot exceed value" }
+
+  /expenses/{expenseId}:
+    parameters:
+      - $ref: '#/components/parameters/ExpenseId'
+    get:
+      tags: [expenses]
+      operationId: getExpenseById
+      summary: Трата по id
+      responses:
+        '200':
+          description: Трата найдена
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Expense' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [expenses]
+      operationId: replaceExpense
+      summary: Полная замена траты
+      description: Все поля обязательны (кроме `receiptId`). Перенос траты в другую поездку запрещен.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateExpenseRequest' }
+      responses:
+        '200':
+          description: Трата обновлена
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Expense' }
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Поездка уже завершена
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422':
+          description: Нарушено бизнес-правило
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Error' }
+    patch:
+      tags: [expenses]
+      operationId: patchExpense
+      summary: Частичное изменение траты (JSON Merge Patch)
+      description: |
+        Семантика - JSON Merge Patch (RFC 7396): поле, отсутствующее в теле,
+        не изменяется; поле со значением `null` явно очищается там, где это
+        осмысленно (сейчас это только `receiptId` - отвязать трату от чека,
+        заменяет RPC `AttachExpenses`/`DetachFromReceiptAsync`). Для `name`,
+        `value`, `payerId`, `consumerIds` значение `null` недопустимо и
+        возвращает `400`, так как у них нет осмысленного "пустого" состояния.
+      requestBody:
+        required: true
+        content:
+          application/merge-patch+json:
+            schema: { $ref: '#/components/schemas/PatchExpenseRequest' }
+            examples:
+              attachToReceipt:
+                summary: Привязать к чеку
+                value: { receiptId: "44444444-4444-4444-4444-444444444444" }
+              detachFromReceipt:
+                summary: Отвязать от чека
+                value: { receiptId: null }
+              changeAmount:
+                summary: Изменить сумму и скидку
+                value: { value: 75.00, discount: 5.00 }
+      responses:
+        '200':
+          description: Трата обновлена
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Expense' }
+        '400':
+          description: Запрещенный `null` для поля без пустого состояния, либо некорректный merge-patch
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Поездка уже завершена
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422':
+          description: Нарушено бизнес-правило
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Error' }
+    delete:
+      tags: [expenses]
+      operationId: deleteExpense
+      summary: Удалить трату
+      description: Логическое удаление (`deleted_at`). Повторный вызов на уже удаленной трате - `404`.
+      responses:
+        '204':
+          description: Трата удалена
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Поездка уже завершена
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /trips/{tripId}/receipts:
+    parameters:
+      - $ref: '#/components/parameters/TripId'
+    get:
+      tags: [receipts]
+      operationId: listTripReceipts
+      summary: Список чеков поездки
+      responses:
+        '200':
+          description: Список чеков (пусто, если их еще нет)
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Receipt' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      tags: [receipts]
+      operationId: createReceipt
+      summary: Создать чек
+      description: Поездка должна быть активна (BR-05).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateReceiptRequest' }
+            examples:
+              default:
+                value: { name: "Ресторан Мимино", date: "2026-05-02" }
+      responses:
+        '201':
+          description: Чек создан
+          headers:
+            Location:
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Receipt' }
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Поездка уже завершена
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /receipts/{receiptId}:
+    parameters:
+      - $ref: '#/components/parameters/ReceiptId'
+    get:
+      tags: [receipts]
+      operationId: getReceiptById
+      summary: Чек по id
+      responses:
+        '200':
+          description: Чек найден
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Receipt' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [receipts]
+      operationId: deleteReceipt
+      summary: Удалить чек
+      description: |
+        Физическое удаление (в схеме БД у `receipts` нет `deleted_at`),
+        каскадно удаляет изображение чека. В отличие от создания чека и трат,
+        удаление чека **не проверяет статус поездки** - так уже устроено в
+        `ReceiptService.DeleteAsync` (см. `docs/api/review.md`, намеренно не
+        меняем бизнес-правило в этой лабе). Повторный вызов - `404`.
+      responses:
+        '204':
+          description: Чек удален
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /receipts/{receiptId}/image:
+    parameters:
+      - $ref: '#/components/parameters/ReceiptId'
+    get:
+      tags: [receipts]
+      operationId: getReceiptImage
+      summary: Получить изображение чека
+      description: У чека не более одного изображения (BR-07, `receipt_images.receipt_id UNIQUE`).
+      responses:
+        '302':
+          description: Редирект на presigned S3 URL (действителен ограниченное время)
+          headers:
+            Location:
+              schema: { type: string, format: uri }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Чек не найден, либо у чека нет изображения
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Error' }
+    put:
+      tags: [receipts]
+      operationId: uploadReceiptImage
+      summary: Загрузить/заменить изображение чека
+      description: |
+        Идемпотентная полная замена (PUT): если у чека уже было изображение,
+        оно удаляется из хранилища перед сохранением нового
+        (`ReceiptImageService.UploadAsync`).
+
+        Лимит размера - 10 МБ (`ReceiptsController.MaxUploadBytes`,
+        `ReceiptImageOptions.MaxFileSizeBytes` - оба сейчас равны 10 МБ, но
+        задаются независимо, см. `docs/api/review.md`). Допустимые
+        content-type - `image/jpeg`, `image/png`, `image/webp`,
+        `application/pdf` (`ReceiptImageOptions.AllowedContentTypes`).
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  maxLength: 10485760
+                  description: Максимум 10 МБ (10485760 байт)
+            encoding:
+              file:
+                contentType: image/jpeg, image/png, image/webp, application/pdf
+      responses:
+        '200':
+          description: Изображение сохранено
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReceiptImage' }
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Поездка уже завершена
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '413':
+          description: |
+            Файл превышает лимит размера на уровне транспорта
+            (`RequestSizeLimit`, проверяется раньше бизнес-логики, до
+            обращения к `ReceiptImageService`).
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Error' }
+              examples:
+                default:
+                  value: { type: "about:blank", title: "Payload Too Large", status: 413, code: "file_too_large", detail: "Файл превышает лимит в 10 МБ" }
+        '422':
+          description: |
+            Запрос прошел транспортный лимит размера, но не прошел
+            бизнес-проверку `ReceiptImageService` (недопустимый content-type,
+            либо размер все равно превышен, если лимиты когда-нибудь разойдутся).
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Error' }
+              examples:
+                default:
+                  value: { type: "about:blank", title: "Unprocessable Entity", status: 422, code: "invalid_receipt_image", detail: "Недопустимый тип файла" }
+    delete:
+      tags: [receipts]
+      operationId: deleteReceiptImage
+      summary: Удалить изображение чека
+      responses:
+        '204':
+          description: Изображение удалено
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Чек не найден, либо у чека нет изображения
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    TripId:
+      name: tripId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ExpenseId:
+      name: expenseId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ReceiptId:
+      name: receiptId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    Page:
+      name: page
+      in: query
+      required: false
+      schema: { type: integer, minimum: 1, default: 1 }
+    PageSize:
+      name: pageSize
+      in: query
+      required: false
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+
+  responses:
+    BadRequest:
+      description: Некорректный запрос (не прошла базовая валидация)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Error' }
+          examples:
+            default:
+              value: { type: "about:blank", title: "Bad Request", status: 400, code: "validation_error", detail: "Currency must be ISO 4217 (3 letters)" }
+    Unauthorized:
+      description: Отсутствует либо недействителен access-токен
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Error' }
+          examples:
+            default:
+              value: { type: "about:blank", title: "Unauthorized", status: 401, code: "unauthorized", detail: "Access token is missing or invalid" }
+    Forbidden:
+      description: Пользователь не является участником поездки
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Error' }
+          examples:
+            default:
+              value: { type: "about:blank", title: "Forbidden", status: 403, code: "forbidden", detail: "User is not a participant of this trip" }
+    NotFound:
+      description: Ресурс не найден
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+  schemas:
+    Error:
+      type: object
+      description: Структура ошибки - RFC 7807 Problem Details + стабильный машиночитаемый `code`.
+      required: [title, status, code]
+      properties:
+        type: { type: string, format: uri, description: "Идентификатор типа проблемы (RFC 7807); 'about:blank', если отдельная страница не нужна" }
+        title: { type: string, description: "Короткое описание класса ошибки" }
+        status: { type: integer, description: "Повторяет HTTP-статус ответа" }
+        detail: { type: string, description: "Человекочитаемое описание конкретного случая" }
+        instance: { type: string, description: "URI конкретного запроса, опционально" }
+        code:
+          type: string
+          description: Стабильный машиночитаемый код ошибки для клиентского кода
+          enum:
+            - validation_error
+            - unauthorized
+            - forbidden
+            - user_not_found
+            - trip_not_found
+            - expense_not_found
+            - receipt_not_found
+            - receipt_image_not_found
+            - trip_already_finished
+            - invalid_expense
+            - invalid_receipt_image
+            - file_too_large
+
+    AuthTokenRequest:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string, format: email, maxLength: 255 }
+
+    AuthToken:
+      type: object
+      required: [accessToken, tokenType, expiresIn]
+      properties:
+        accessToken: { type: string, readOnly: true }
+        tokenType: { type: string, enum: [Bearer], readOnly: true }
+        expiresIn: { type: integer, description: "Время жизни токена в секундах", readOnly: true }
+
+    RegisterUserRequest:
+      type: object
+      required: [name, email]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 100 }
+        email: { type: string, format: email, maxLength: 255 }
+
+    AddParticipantRequest:
+      type: object
+      description: Пустой объект - self-join текущим пользователем; `email` - пригласить зарегистрированного пользователя.
+      properties:
+        email: { type: string, format: email, maxLength: 255 }
+
+    User:
+      type: object
+      required: [id, name, email]
+      properties:
+        id: { type: string, format: uuid, readOnly: true }
+        name: { type: string, minLength: 1, maxLength: 100 }
+        email: { type: string, format: email, readOnly: true, description: "Неизменяем после регистрации - отдельного эндпоинта смены email нет" }
+
+    CreateTripRequest:
+      type: object
+      required: [name, currency]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 200 }
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+          description: ISO 4217, 3 латинские буквы (BR-01)
+
+    Trip:
+      type: object
+      required: [id, name, currency, status, createdAt]
+      properties:
+        id: { type: string, format: uuid, readOnly: true }
+        name: { type: string, minLength: 1, maxLength: 200 }
+        currency: { type: string, pattern: '^[A-Z]{3}$' }
+        status:
+          type: string
+          enum: [active, finished]
+          readOnly: true
+          description: Меняется только через `POST /trips/{tripId}/finish`
+        createdAt: { type: string, format: date-time, readOnly: true }
+
+    TripPage:
+      type: object
+      required: [items, page, pageSize, total]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Trip' }
+        page: { type: integer }
+        pageSize: { type: integer }
+        total: { type: integer }
+
+    ExpenseType:
+      type: string
+      enum: [food, transport, accommodation, entertainment, other]
+
+    CreateExpenseRequest:
+      type: object
+      required: [name, type, value, payerId, consumerIds]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 200 }
+        type: { $ref: '#/components/schemas/ExpenseType' }
+        value: { type: number, exclusiveMinimum: 0, description: "Сумма траты, 2 знака после запятой (BR-02)" }
+        discount: { type: number, minimum: 0, default: 0, description: "Не может превышать value (BR-02)" }
+        payerId: { type: string, format: uuid, description: "Должен быть участником поездки (BR-10)" }
+        consumerIds:
+          type: array
+          items: { type: string, format: uuid }
+          minItems: 1
+          description: Все элементы должны быть участниками поездки (BR-03, BR-10)
+        receiptId: { type: [string, "null"], format: uuid, description: "Должен принадлежать той же поездке, если указан (BR-11)" }
+
+    PatchExpenseRequest:
+      type: object
+      description: JSON Merge Patch (RFC 7396). Отсутствующее поле не меняется.
+      properties:
+        name: { type: string, minLength: 1, maxLength: 200 }
+        type: { $ref: '#/components/schemas/ExpenseType' }
+        value: { type: number, exclusiveMinimum: 0 }
+        discount: { type: number, minimum: 0 }
+        payerId: { type: string, format: uuid }
+        consumerIds:
+          type: array
+          items: { type: string, format: uuid }
+          minItems: 1
+        receiptId:
+          type: [string, "null"]
+          format: uuid
+          description: "`null` явно отвязывает трату от чека; отсутствие поля - не менять привязку"
+
+    Expense:
+      type: object
+      required: [id, tripId, name, type, value, discount, effectiveAmount, payerId, consumerIds, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid, readOnly: true }
+        tripId: { type: string, format: uuid, readOnly: true }
+        receiptId: { type: [string, "null"], format: uuid }
+        name: { type: string, minLength: 1, maxLength: 200 }
+        type: { $ref: '#/components/schemas/ExpenseType' }
+        value: { type: number, exclusiveMinimum: 0 }
+        discount: { type: number, minimum: 0 }
+        effectiveAmount: { type: number, readOnly: true, description: "value - discount (BR-04)" }
+        payerId: { type: string, format: uuid }
+        consumerIds:
+          type: array
+          items: { type: string, format: uuid }
+          minItems: 1
+        createdAt: { type: string, format: date-time, readOnly: true }
+        updatedAt: { type: string, format: date-time, readOnly: true }
+
+    ExpensePage:
+      type: object
+      required: [items, page, pageSize, total]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Expense' }
+        page: { type: integer }
+        pageSize: { type: integer }
+        total: { type: integer }
+
+    CreateReceiptRequest:
+      type: object
+      required: [name, date]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 200 }
+        date: { type: string, format: date }
+
+    Receipt:
+      type: object
+      required: [id, tripId, name, date]
+      properties:
+        id: { type: string, format: uuid, readOnly: true }
+        tripId: { type: string, format: uuid, readOnly: true }
+        name: { type: string, minLength: 1, maxLength: 200 }
+        date: { type: string, format: date }
+        hasImage: { type: boolean, readOnly: true }
+
+    ReceiptImage:
+      type: object
+      required: [id, receiptId, contentType, fileSizeBytes, originalFileName, uploadedAt]
+      properties:
+        id: { type: string, format: uuid, readOnly: true }
+        receiptId: { type: string, format: uuid, readOnly: true }
+        contentType: { type: string, readOnly: true }
+        fileSizeBytes: { type: integer, readOnly: true }
+        originalFileName: { type: string, readOnly: true }
+        uploadedAt: { type: string, format: date-time, readOnly: true }
+
+    UserSpent:
+      type: object
+      required: [userId, amount]
+      properties:
+        userId: { type: string, format: uuid }
+        amount: { type: number }
+
+    Transfer:
+      type: object
+      required: [fromUserId, toUserId, amount]
+      properties:
+        fromUserId: { type: string, format: uuid }
+        toUserId: { type: string, format: uuid }
+        amount: { type: number, exclusiveMinimum: 0 }
+
+    Settlement:
+      type: object
+      required: [tripId, totalSpent, perUserSpent, transfers]
+      properties:
+        tripId: { type: string, format: uuid, readOnly: true }
+        totalSpent: { type: number, readOnly: true }
+        perUserSpent:
+          type: array
+          items: { $ref: '#/components/schemas/UserSpent' }
+          readOnly: true
+        transfers:
+          type: array
+          items: { $ref: '#/components/schemas/Transfer' }
+          readOnly: true

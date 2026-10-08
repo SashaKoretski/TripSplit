@@ -219,28 +219,28 @@ Web UI запускаются вручную. Это затрудняет вос
 
 ## Диаграммы последовательностей (UML)
 
-![Sequence — Create Trip](img/UML/CreateTrip_UML.png)
+![Sequence — Create Trip](docs/UML/CreateTrip_UML.png)
 
-![Sequence — Add Expense](img/UML/AddExpense_UML.png)
+![Sequence — Add Expense](docs/UML/AddExpense_UML.png)
 
-![Sequence — Settlement](img/UML/Settlement_UML.png)
+![Sequence — Settlement](docs/UML/Settlement_UML.png)
 
 ## C4 L4 - диаграммы классов ключевых компонентов
 
 ### Диаграмма классов ExpenseRepository (компонент доступа к данным)
-![L4 ExpenseRepository](img/C4/L4/L4_Component_ExpenseRepository.png)
+![L4 ExpenseRepository](docs/C4/L4/L4_Component_ExpenseRepository.png)
 
 ### Диаграмма классов DebtSettlementService (компонент бизнес-логики)
-![L4 DebtSettlementService](img/C4/L4/L4_Component_DebtSettlementService.png)
+![L4 DebtSettlementService](docs/C4/L4/L4_Component_DebtSettlementService.png)
 
 ### Диаграмма классов Console UI (технологический UI)
-![L4 ConsoleUI](img/C4/L4/L4_Component_ConsoleUI.png)
+![L4 ConsoleUI](docs/C4/L4/L4_Component_ConsoleUI.png)
 
 ### Диаграмма классов Logger (компонент логирования)
-![L4 Logger](img/C4/L4/L4_Component_Logger.png)
+![L4 Logger](docs/C4/L4/L4_Component_Logger.png)
 
 ### Диаграмма классов Web UI (пользовательский графический интерфейс)
-![L4 WebUI](img/C4/L4/L4_Component_WebUI.svg)
+![L4 WebUI](docs/C4/L4/L4_Component_WebUI.svg)
 
 ## Сборка и запуск (подробно)
 
@@ -260,4 +260,4 @@ dotnet run --project TripSplit.WebUI
 Запуск напрямую из ОС - двойной клик по `src\publish\TripSplit.ConsoleUI.exe`
 (или `.\publish\TripSplit.ConsoleUI.exe` в PowerShell).
 
-![Собранные компоненты приложения](img/Deploy_dir/deployed_components.png)
+![Собранные компоненты приложения](docs/Deploy_dir/deployed_components.png)

@@ -1,0 +1,13 @@
+{
+  "name": "tripsplit-openapi",
+  "private": true,
+  "description": "Проверка контракта TripSplit REST API (openapi.yaml): lint + mock-сервер. Не часть .NET-решения.",
+  "scripts": {
+    "lint": "redocly lint",
+    "mock": "prism mock openapi.yaml"
+  },
+  "devDependencies": {
+    "@redocly/cli": "2.60.0",
+    "@stoplight/prism-cli": "5.14.2"
+  }
+}

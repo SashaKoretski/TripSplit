@@ -1,0 +1,20 @@
+# Конфиг Redocly CLI для openapi.yaml.
+# Отключены два правила из built-in "recommended" ruleset - оба осознанно,
+# не как способ скрыть реальную проблему (см. docs/api/review.md):
+#
+# - info-license: в проекте нет файла лицензии (учебный проект),
+#   придумывать license в OpenAPI означало бы указать то, чего нет в фактах.
+# - operation-2xx-response: GET /receipts/{receiptId}/image по дизайну
+#   отдает только 302 (редирект на presigned S3 URL) - это и есть "успех"
+#   для этой операции, добавлять формальный 200 только чтобы пройти правило
+#   значило бы придумывать поведение, которого нет в ReceiptImageService.
+apis:
+  tripsplit@v1:
+    root: openapi.yaml
+
+extends:
+  - recommended
+
+rules:
+  info-license: off
+  operation-2xx-response: off

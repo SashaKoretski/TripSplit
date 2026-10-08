@@ -42,21 +42,21 @@
 Два актора: Пользователь (не участвует в поездке сейчас) и Участник
 (состоит в конкретной поездке).
 
-![Use Case](img/Use-case/UseCase.png)
+![Use Case](docs/Use-case/UseCase.png)
 
 ## Бизнес-процессы (BPMN)
 
 Обзорная сквозная схема жизненного цикла поездки:
 
-![Формализация бизнес-процессов](img/Business-process/b_process.jpg)
+![Формализация бизнес-процессов](docs/Business-process/b_process.jpg)
 
 Три нелинейных процесса с ветвлениями и обработкой ошибок:
 
-![Создание поездки и приглашение участников](img/Business-process/bpmn-create-trip.png)
+![Создание поездки и приглашение участников](docs/Business-process/bpmn-create-trip.png)
 
-![Добавление траты с чеком](img/Business-process/bpmn-add-expense.png)
+![Добавление траты с чеком](docs/Business-process/bpmn-add-expense.png)
 
-![Завершение поездки и расчет долгов](img/Business-process/bpmn-settlement.png)
+![Завершение поездки и расчет долгов](docs/Business-process/bpmn-settlement.png)
 
 ## Пользовательские сценарии
 
@@ -86,7 +86,7 @@
 
 ## ER-диаграмма сущностей
 
-![Диаграмма сущностей](img/ER/ER.png)
+![Диаграмма сущностей](docs/ER/ER.png)
 
 ## Технологический стек
 
@@ -102,35 +102,35 @@
 
 ## Схема базы данных (DBML)
 
-![DBML](img/DBML/DBML.png)
+![DBML](docs/DBML/DBML.png)
 
 ## C4: контекст, контейнеры, компоненты
 
 ### Контекст системы
-![L1 Context](img/C4/L1-L3/L1_Context.png)
+![L1 Context](docs/C4/L1-L3/L1_Context.png)
 
 ### Контейнеры
-![L2 Containers](img/C4/L1-L3/L2_Containers.png)
+![L2 Containers](docs/C4/L1-L3/L2_Containers.png)
 
 ### Компоненты Web UI
-![L3 WebUI](img/C4/L1-L3/L3_WebUI.png)
+![L3 WebUI](docs/C4/L1-L3/L3_WebUI.png)
 
 ### Компоненты Business Logic
-![L3 BusinessLogic](img/C4/L1-L3/L3_BusinessLogic.png)
+![L3 BusinessLogic](docs/C4/L1-L3/L3_BusinessLogic.png)
 
 ### Компоненты Data Access
-![L3 DataAccess](img/C4/L1-L3/L3_DataAccess.png)
+![L3 DataAccess](docs/C4/L1-L3/L3_DataAccess.png)
 
 ## Экраны
 
 ### Список поездок - создание и присоединение
-![Список поездок - создание и присоединение](img/Web_Interface/trip_web_ui.png)
+![Список поездок - создание и присоединение](docs/Web_Interface/trip_web_ui.png)
 
 ### Добавление траты
-![Добавление траты](img/Web_Interface/expence_web_ui.png)
+![Добавление траты](docs/Web_Interface/expence_web_ui.png)
 
 ### Итог и расчет долгов
-![Итог и расчет долгов](img/Web_Interface/result_web_ui.png)
+![Итог и расчет долгов](docs/Web_Interface/result_web_ui.png)
 
 ## Архитектурные решения (ADR)
 
