@@ -30,5 +30,45 @@ services:
       exit 0
       "
 
+  # Отдельный инстанс хранилища для тестового стенда ЛР2 (integration/e2e).
+  # Не используется приложением в dev-режиме (там Postgres на хосте, порт 5432) -
+  # изолирован своим портом/БД/volume, чтобы не задеть рабочие данные (ТИОПО ЛР2, Т2-Т3).
+  postgres-test:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: tripsplit_test
+      POSTGRES_PASSWORD: tripsplit_test
+      POSTGRES_DB: tripsplit_test
+    ports:
+      - "${POSTGRES_TEST_PORT:-5433}:5432"
+    volumes:
+      - postgres-test-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tripsplit_test -d tripsplit_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Контейнеризованное приложение для e2e-стенда ЛР2 (З5 - захват трафика нужен именно
+  # к контейнеру, см. docs/LAB02 traffic capture). Не заменяет обычный dotnet run в dev.
+  webui-test:
+    build:
+      context: ./src
+      dockerfile: TripSplit.WebUI/Dockerfile
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    ports:
+      - "${WEBUI_TEST_PORT:-5301}:8080"
+    environment:
+      ConnectionStrings__Postgres: "Host=postgres-test;Port=5432;Database=tripsplit_test;Username=tripsplit_test;Password=tripsplit_test"
+      # Чеки с загрузкой файла не входят в e2e-сценарий - реальный MinIO/S3 не нужен,
+      # AmazonS3Client создается лениво и не подключается, пока UploadAsync не вызван.
+      ObjectStorage__ServiceUrl: "http://unused.invalid:9000"
+      ObjectStorage__AccessKey: "unused"
+      ObjectStorage__SecretKey: "unused"
+      ObjectStorage__Bucket: "unused"
+
 volumes:
   minio-data:
+  postgres-test-data:

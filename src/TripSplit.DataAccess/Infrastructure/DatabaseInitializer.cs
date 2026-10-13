@@ -9,9 +9,18 @@ public sealed class DatabaseInitializer
     public DatabaseInitializer(IDbConnectionFactory factory) =>
         _factory = factory ?? throw new ArgumentNullException(nameof(factory));
 
-    public async Task InitializeAsync(CancellationToken ct = default)
+    public async Task InitializeAsync(CancellationToken ct = default) =>
+        await RunScriptAsync("init.sql", ct).ConfigureAwait(false);
+
+    // Откатывает тестовое хранилище к состоянию "до прогона тестов" (ТИОПО ЛР2, Т4/Т10).
+    // Использует тот же механизм последовательного запуска SQL-скрипта, что и InitializeAsync -
+    // пригодно и для integration-, и для e2e-тестовых проектов без дублирования SQL.
+    public async Task ResetAsync(CancellationToken ct = default) =>
+        await RunScriptAsync("reset-test-data.sql", ct).ConfigureAwait(false);
+
+    private async Task RunScriptAsync(string scriptName, CancellationToken ct)
     {
-        var sql = await LoadEmbeddedSqlAsync("init.sql", ct).ConfigureAwait(false);
+        var sql = await LoadEmbeddedSqlAsync(scriptName, ct).ConfigureAwait(false);
         await using var conn = await _factory.OpenAsync(ct).ConfigureAwait(false);
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = sql;

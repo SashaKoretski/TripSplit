@@ -1,0 +1,161 @@
+name: CI
+
+# ТИОПО ЛР2, З4/Т5: unit -> integration -> e2e, каждый следующий этап запускается только
+# если предыдущий прошел (jobs.<job>.needs - GitHub сам помечает зависимые джобы "skipped",
+# если предыдущая упала, см. Т8). Контейнер-раннер (Т1) собирается в каждом джобе и клонирует
+# внутри сборки именно тестируемый коммит (env.REPO_REVISION), а не копирует checkout job'а.
+
+on:
+  push:
+    branches: [lab2_test]
+  pull_request:
+
+env:
+  REPO_URL: https://github.com/${{ github.repository }}.git
+  # На событии pull_request github.sha - это синтетический тестовый merge-коммит
+  # (refs/pull/<N>/merge), которого нет в обычном клоне; берем настоящий коммит головы PR.
+  REPO_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build test-runner image (clones ${{ env.REPO_REVISION }} inside the build)
+        run: |
+          docker build \
+            --build-arg REPO_URL="$REPO_URL" \
+            --build-arg REPO_REVISION="${{ env.REPO_REVISION }}" \
+            -t test-runner:${{ env.REPO_REVISION }} \
+            docker/test-runner
+
+      - name: Run unit tests
+        run: |
+          mkdir -p results
+          docker run --rm -v "$PWD/results:/results" test-runner:${{ env.REPO_REVISION }} unit
+
+      - name: Upload unit test report (even on failure, Т8)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-results
+          path: results/*.trx
+          if-no-files-found: warn
+
+  integration:
+    needs: unit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build test-runner image
+        run: |
+          docker build \
+            --build-arg REPO_URL="$REPO_URL" \
+            --build-arg REPO_REVISION="${{ env.REPO_REVISION }}" \
+            -t test-runner:${{ env.REPO_REVISION }} \
+            docker/test-runner
+
+      - name: Start a dedicated test storage instance (Т2-Т3)
+        run: |
+          docker network create citest
+          docker run -d --name postgres-test --network citest \
+            -e POSTGRES_USER=tripsplit_test \
+            -e POSTGRES_PASSWORD=tripsplit_test \
+            -e POSTGRES_DB=tripsplit_test \
+            postgres:16-alpine
+          for i in $(seq 1 30); do
+            docker exec postgres-test pg_isready -U tripsplit_test -d tripsplit_test && break
+            sleep 2
+          done
+
+      - name: Run integration tests
+        run: |
+          mkdir -p results
+          docker run --rm --network citest \
+            -e TRIPSPLIT_TEST_DB="Host=postgres-test;Port=5432;Database=tripsplit_test;Username=tripsplit_test;Password=tripsplit_test" \
+            -v "$PWD/results:/results" test-runner:${{ env.REPO_REVISION }} integration
+
+      - name: Upload integration test report (even on failure, Т8)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-results
+          path: results/*.trx
+          if-no-files-found: warn
+
+      # Т10: контейнер хранилища - одноразовый для этого прогона, поэтому "откат" - это его
+      # полное уничтожение, а не выборочный rollback; следующий прогон получает чистый инстанс.
+      - name: Tear down the test storage instance (Т10)
+        if: always()
+        run: |
+          docker rm -f postgres-test || true
+          docker network rm citest || true
+
+  e2e:
+    needs: integration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build test-runner and WebUI images
+        run: |
+          docker build \
+            --build-arg REPO_URL="$REPO_URL" \
+            --build-arg REPO_REVISION="${{ env.REPO_REVISION }}" \
+            -t test-runner:${{ env.REPO_REVISION }} \
+            docker/test-runner
+          docker build -f src/TripSplit.WebUI/Dockerfile -t webui:${{ env.REPO_REVISION }} src
+
+      - name: Start test storage and the application under test
+        run: |
+          docker network create citest
+          docker run -d --name postgres-test --network citest \
+            -e POSTGRES_USER=tripsplit_test \
+            -e POSTGRES_PASSWORD=tripsplit_test \
+            -e POSTGRES_DB=tripsplit_test \
+            postgres:16-alpine
+          for i in $(seq 1 30); do
+            docker exec postgres-test pg_isready -U tripsplit_test -d tripsplit_test && break
+            sleep 2
+          done
+
+          # Чеки с загрузкой файла не входят в демо-сценарий E2E, поэтому реальный MinIO/S3
+          # не нужен - приложению достаточно синтаксически валидной конфигурации, чтобы
+          # поднять IFileStorageService (ленивая инициализация клиента, см. S3FileStorageService).
+          docker run -d --name webui --network citest \
+            -e ConnectionStrings__Postgres="Host=postgres-test;Port=5432;Database=tripsplit_test;Username=tripsplit_test;Password=tripsplit_test" \
+            -e ObjectStorage__ServiceUrl="http://unused.invalid:9000" \
+            -e ObjectStorage__AccessKey="unused" \
+            -e ObjectStorage__SecretKey="unused" \
+            -e ObjectStorage__Bucket="unused" \
+            webui:${{ env.REPO_REVISION }}
+          for i in $(seq 1 30); do
+            docker run --rm --network citest curlimages/curl:8.10.1 -sf http://webui:8080/Account/Login >/dev/null 2>&1 && break
+            sleep 2
+          done
+
+      - name: Run E2E tests
+        run: |
+          mkdir -p results
+          docker run --rm --network citest \
+            -e TRIPSPLIT_TEST_DB="Host=postgres-test;Port=5432;Database=tripsplit_test;Username=tripsplit_test;Password=tripsplit_test" \
+            -e TRIPSPLIT_E2E_BASE_URL="http://webui:8080" \
+            -v "$PWD/results:/results" test-runner:${{ env.REPO_REVISION }} e2e
+
+      - name: Upload E2E test report (even on failure, Т8)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results
+          path: results/*.trx
+          if-no-files-found: warn
+
+      # Т10 (хранилище) + Т12 (пользовательские сессии): весь webui-контейнер с его
+      # in-memory сессиями и тестовый Postgres уничтожаются целиком после любого исхода.
+      - name: Tear down the application and test storage (Т10/Т12)
+        if: always()
+        run: |
+          docker rm -f webui postgres-test || true
+          docker network rm citest || true

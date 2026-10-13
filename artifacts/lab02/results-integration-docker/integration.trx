@@ -1,0 +1,80 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="53134121-06a5-4441-8adc-e08a45c953d6" name="@c7f4e85697e7 2026-10-13 11:43:42" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-13T11:43:42.9704823+00:00" queuing="2026-10-13T11:43:42.9704824+00:00" start="2026-10-13T11:43:41.0043495+00:00" finish="2026-10-13T11:43:43.5360743+00:00" />
+  <TestSettings name="default" id="9184d56a-414c-49b6-aee3-961b73e09081">
+    <Deployment runDeploymentRoot="_c7f4e85697e7_2026-10-13_11_43_42" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="0f25a142-75fe-4ce9-b7d9-d730fd11e462" testId="041d58af-dc59-7485-196d-a9d63bb7ff37" testName="TripSplit.DataAccess.Tests.ExpenseRepositoryTests.Add_Then_GetById_Restores_All_Fields_And_Consumers" computerName="c7f4e85697e7" duration="00:00:00.1208513" startTime="2026-10-13T11:43:43.1764824+00:00" endTime="2026-10-13T11:43:43.1764826+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="0f25a142-75fe-4ce9-b7d9-d730fd11e462" />
+    <UnitTestResult executionId="08c3db22-40b6-4657-b43c-1c5f267a922b" testId="8cba9693-ae10-74d2-ded0-e1f702aabb4b" testName="TripSplit.DataAccess.Tests.UserRepositoryTests.Update_Changes_Are_Persisted" computerName="c7f4e85697e7" duration="00:00:00.0644297" startTime="2026-10-13T11:43:43.3079640+00:00" endTime="2026-10-13T11:43:43.3079642+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="08c3db22-40b6-4657-b43c-1c5f267a922b" />
+    <UnitTestResult executionId="54bc601f-d423-4538-9014-4fb19400eed2" testId="42e7934a-d88a-22d4-fdd1-141288cef5eb" testName="TripSplit.DataAccess.Tests.UserRepositoryTests.Delete_Removes_User" computerName="c7f4e85697e7" duration="00:00:00.0649633" startTime="2026-10-13T11:43:43.3742558+00:00" endTime="2026-10-13T11:43:43.3742560+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="54bc601f-d423-4538-9014-4fb19400eed2" />
+    <UnitTestResult executionId="f621d787-cd65-4e99-b08c-4776cdb3960d" testId="94e08bb1-8f72-79b6-186d-eb32816ab543" testName="TripSplit.DataAccess.Tests.UserRepositoryTests.Add_Then_GetById_Returns_Same_User" computerName="c7f4e85697e7" duration="00:00:00.0639124" startTime="2026-10-13T11:43:43.4395011+00:00" endTime="2026-10-13T11:43:43.4395014+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f621d787-cd65-4e99-b08c-4776cdb3960d" />
+    <UnitTestResult executionId="43b22179-1f37-4c92-9756-68d9e6d972ff" testId="1a12f8f8-2c39-20c8-8a87-20530e6350a3" testName="TripSplit.DataAccess.Tests.UserRepositoryTests.AddAsync_Duplicate_Email_Throws_DuplicateKey" computerName="c7f4e85697e7" duration="00:00:00.0619449" startTime="2026-10-13T11:43:43.2421318+00:00" endTime="2026-10-13T11:43:43.2421320+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="43b22179-1f37-4c92-9756-68d9e6d972ff" />
+    <UnitTestResult executionId="96b555ff-78a0-4656-b6f4-713d410172d5" testId="aa37b17e-a99c-a128-eeb7-255e94e50f67" testName="TripSplit.DataAccess.Tests.ExpenseRepositoryTests.Delete_Removes_Expense_And_Its_Consumers" computerName="c7f4e85697e7" duration="00:00:00.1008699" startTime="2026-10-13T11:43:42.8769158+00:00" endTime="2026-10-13T11:43:42.8769160+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="96b555ff-78a0-4656-b6f4-713d410172d5" />
+    <UnitTestResult executionId="704f117c-e1a6-4c47-89e0-5bd6563e20ae" testId="cfdf9290-49b5-eacd-27a2-dee270df863a" testName="TripSplit.DataAccess.Tests.ExpenseRepositoryTests.Update_Changes_Fields_And_Rewrites_Consumers" computerName="c7f4e85697e7" duration="00:00:00.2792611" startTime="2026-10-13T11:43:42.7441538+00:00" endTime="2026-10-13T11:43:42.7441755+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="704f117c-e1a6-4c47-89e0-5bd6563e20ae" />
+    <UnitTestResult executionId="de392aa8-e948-4797-aa0b-63ec5fd4887b" testId="42ffb460-4e08-26be-d100-da8273b0c32d" testName="TripSplit.DataAccess.Tests.ExpenseRepositoryTests.GetByTrip_Returns_All_Expenses_Of_That_Trip" computerName="c7f4e85697e7" duration="00:00:00.1542843" startTime="2026-10-13T11:43:43.0545003+00:00" endTime="2026-10-13T11:43:43.0545005+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="de392aa8-e948-4797-aa0b-63ec5fd4887b" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="TripSplit.DataAccess.Tests.ExpenseRepositoryTests.Update_Changes_Fields_And_Rewrites_Consumers" storage="/repo/src/tripsplit.dataaccess.tests/bin/debug/net8.0/tripsplit.dataaccess.tests.dll" id="cfdf9290-49b5-eacd-27a2-dee270df863a">
+      <Execution id="704f117c-e1a6-4c47-89e0-5bd6563e20ae" />
+      <TestMethod codeBase="/repo/src/TripSplit.DataAccess.Tests/bin/Debug/net8.0/TripSplit.DataAccess.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TripSplit.DataAccess.Tests.ExpenseRepositoryTests" name="Update_Changes_Fields_And_Rewrites_Consumers" />
+    </UnitTest>
+    <UnitTest name="TripSplit.DataAccess.Tests.UserRepositoryTests.Add_Then_GetById_Returns_Same_User" storage="/repo/src/tripsplit.dataaccess.tests/bin/debug/net8.0/tripsplit.dataaccess.tests.dll" id="94e08bb1-8f72-79b6-186d-eb32816ab543">
+      <Execution id="f621d787-cd65-4e99-b08c-4776cdb3960d" />
+      <TestMethod codeBase="/repo/src/TripSplit.DataAccess.Tests/bin/Debug/net8.0/TripSplit.DataAccess.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TripSplit.DataAccess.Tests.UserRepositoryTests" name="Add_Then_GetById_Returns_Same_User" />
+    </UnitTest>
+    <UnitTest name="TripSplit.DataAccess.Tests.ExpenseRepositoryTests.Add_Then_GetById_Restores_All_Fields_And_Consumers" storage="/repo/src/tripsplit.dataaccess.tests/bin/debug/net8.0/tripsplit.dataaccess.tests.dll" id="041d58af-dc59-7485-196d-a9d63bb7ff37">
+      <Execution id="0f25a142-75fe-4ce9-b7d9-d730fd11e462" />
+      <TestMethod codeBase="/repo/src/TripSplit.DataAccess.Tests/bin/Debug/net8.0/TripSplit.DataAccess.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TripSplit.DataAccess.Tests.ExpenseRepositoryTests" name="Add_Then_GetById_Restores_All_Fields_And_Consumers" />
+    </UnitTest>
+    <UnitTest name="TripSplit.DataAccess.Tests.UserRepositoryTests.Delete_Removes_User" storage="/repo/src/tripsplit.dataaccess.tests/bin/debug/net8.0/tripsplit.dataaccess.tests.dll" id="42e7934a-d88a-22d4-fdd1-141288cef5eb">
+      <Execution id="54bc601f-d423-4538-9014-4fb19400eed2" />
+      <TestMethod codeBase="/repo/src/TripSplit.DataAccess.Tests/bin/Debug/net8.0/TripSplit.DataAccess.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TripSplit.DataAccess.Tests.UserRepositoryTests" name="Delete_Removes_User" />
+    </UnitTest>
+    <UnitTest name="TripSplit.DataAccess.Tests.ExpenseRepositoryTests.Delete_Removes_Expense_And_Its_Consumers" storage="/repo/src/tripsplit.dataaccess.tests/bin/debug/net8.0/tripsplit.dataaccess.tests.dll" id="aa37b17e-a99c-a128-eeb7-255e94e50f67">
+      <Execution id="96b555ff-78a0-4656-b6f4-713d410172d5" />
+      <TestMethod codeBase="/repo/src/TripSplit.DataAccess.Tests/bin/Debug/net8.0/TripSplit.DataAccess.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TripSplit.DataAccess.Tests.ExpenseRepositoryTests" name="Delete_Removes_Expense_And_Its_Consumers" />
+    </UnitTest>
+    <UnitTest name="TripSplit.DataAccess.Tests.ExpenseRepositoryTests.GetByTrip_Returns_All_Expenses_Of_That_Trip" storage="/repo/src/tripsplit.dataaccess.tests/bin/debug/net8.0/tripsplit.dataaccess.tests.dll" id="42ffb460-4e08-26be-d100-da8273b0c32d">
+      <Execution id="de392aa8-e948-4797-aa0b-63ec5fd4887b" />
+      <TestMethod codeBase="/repo/src/TripSplit.DataAccess.Tests/bin/Debug/net8.0/TripSplit.DataAccess.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TripSplit.DataAccess.Tests.ExpenseRepositoryTests" name="GetByTrip_Returns_All_Expenses_Of_That_Trip" />
+    </UnitTest>
+    <UnitTest name="TripSplit.DataAccess.Tests.UserRepositoryTests.Update_Changes_Are_Persisted" storage="/repo/src/tripsplit.dataaccess.tests/bin/debug/net8.0/tripsplit.dataaccess.tests.dll" id="8cba9693-ae10-74d2-ded0-e1f702aabb4b">
+      <Execution id="08c3db22-40b6-4657-b43c-1c5f267a922b" />
+      <TestMethod codeBase="/repo/src/TripSplit.DataAccess.Tests/bin/Debug/net8.0/TripSplit.DataAccess.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TripSplit.DataAccess.Tests.UserRepositoryTests" name="Update_Changes_Are_Persisted" />
+    </UnitTest>
+    <UnitTest name="TripSplit.DataAccess.Tests.UserRepositoryTests.AddAsync_Duplicate_Email_Throws_DuplicateKey" storage="/repo/src/tripsplit.dataaccess.tests/bin/debug/net8.0/tripsplit.dataaccess.tests.dll" id="1a12f8f8-2c39-20c8-8a87-20530e6350a3">
+      <Execution id="43b22179-1f37-4c92-9756-68d9e6d972ff" />
+      <TestMethod codeBase="/repo/src/TripSplit.DataAccess.Tests/bin/Debug/net8.0/TripSplit.DataAccess.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TripSplit.DataAccess.Tests.UserRepositoryTests" name="AddAsync_Duplicate_Email_Throws_DuplicateKey" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="041d58af-dc59-7485-196d-a9d63bb7ff37" executionId="0f25a142-75fe-4ce9-b7d9-d730fd11e462" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="8cba9693-ae10-74d2-ded0-e1f702aabb4b" executionId="08c3db22-40b6-4657-b43c-1c5f267a922b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="42e7934a-d88a-22d4-fdd1-141288cef5eb" executionId="54bc601f-d423-4538-9014-4fb19400eed2" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="94e08bb1-8f72-79b6-186d-eb32816ab543" executionId="f621d787-cd65-4e99-b08c-4776cdb3960d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1a12f8f8-2c39-20c8-8a87-20530e6350a3" executionId="43b22179-1f37-4c92-9756-68d9e6d972ff" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="aa37b17e-a99c-a128-eeb7-255e94e50f67" executionId="96b555ff-78a0-4656-b6f4-713d410172d5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="cfdf9290-49b5-eacd-27a2-dee270df863a" executionId="704f117c-e1a6-4c47-89e0-5bd6563e20ae" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="42ffb460-4e08-26be-d100-da8273b0c32d" executionId="de392aa8-e948-4797-aa0b-63ec5fd4887b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="8" executed="8" passed="8" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.5.3.1+6b60a9e56a (64-bit .NET 8.0.31)
+[xUnit.net 00:00:00.36] Allure.Xunit: XunitTestRunner's Void .ctor(Xunit.Abstractions.ITest, Xunit.Sdk.IMessageBus, System.Type, System.Object[], System.Reflection.MethodInfo, System.Object[], System.String, System.Collections.Generic.IReadOnlyList`1[Xunit.Sdk.BeforeAfterTestAttribute], Xunit.Sdk.ExceptionAggregator, System.Threading.CancellationTokenSource) has been patched
+[xUnit.net 00:00:00.40] Allure.Xunit: Allure reporter enabled
+[xUnit.net 00:00:00.47]   Discovering: TripSplit.DataAccess.Tests
+[xUnit.net 00:00:00.59]   Discovered:  TripSplit.DataAccess.Tests
+[xUnit.net 00:00:00.60]   Starting:    TripSplit.DataAccess.Tests
+[RandomOrderer] seed=550535 (set TRIPSPLIT_TEST_SEED to reproduce)
+[RandomOrderer] seed=551291 (set TRIPSPLIT_TEST_SEED to reproduce)
+[xUnit.net 00:00:02.00]   Finished:    TripSplit.DataAccess.Tests
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>
