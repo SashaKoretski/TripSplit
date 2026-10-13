@@ -9,7 +9,7 @@
 | Step | operationId | HTTP method | Path | Expected result |
 |---|---|---|---|---|
 | Получить access-токен по email | `issueAuthToken` | POST | `/auth/token` | `200` с `accessToken`; `404 user_not_found`, если email не зарегистрирован |
-| (если пользователь новый) зарегистрироваться | `registerUser` | POST | `/users` | `201` с новым `User`, либо `200` с уже существующим (BR-08) |
+| (если пользователь новый) зарегистрироваться | `registerUser` | POST | `/users` | `201` с новым `User`; `409 user_already_registered`, если email уже занят (правка 2026-10-08, см. `review.md`) |
 
 ## SC-001 - Создание поездки и приглашение участников
 
@@ -29,7 +29,8 @@
 |---|---|---|---|---|
 | Открыть форму (список участников, список чеков поездки) | `listTripParticipants`, `listTripReceipts` | GET | `/trips/{tripId}/participants`, `/trips/{tripId}/receipts` | `200` |
 | Альт.: создать новый чек "на лету" | `createReceipt` | POST | `/trips/{tripId}/receipts` | `201` с новым `Receipt` |
-| Загрузить фото к новому чеку | `uploadReceiptImage` | PUT | `/receipts/{receiptId}/image` | `200` с `ReceiptImage`; `413 file_too_large`, если файл больше 10 МБ; `422 invalid_receipt_image`, если дошел до бизнес-логики, но content-type недопустим |
+| Загрузить фото к новому чеку | `uploadReceiptImage` | PUT | `/receipts/{receiptId}/image` | `200` с `ReceiptImage` (сразу с `url`/`urlExpiresAt`, правка 2026-10-08 - без лишнего запроса за ссылкой); `413 file_too_large`, если файл больше 10 МБ; `422 invalid_receipt_image`, если дошел до бизнес-логики, но content-type недопустим |
+| Показать список чеков с превью фото | `listTripReceipts` | GET | `/trips/{tripId}/receipts` | `200`, у каждого `Receipt.image` сразу `url`, если фото есть - без N+1 запросов на ссылки |
 | Создать трату | `createExpense` | POST | `/trips/{tripId}/expenses` | `201` с `Expense.effectiveAmount = value - discount` |
 | Ошибка: поездка завершена | `createExpense` | POST | `/trips/{tripId}/expenses` | `409 trip_already_finished` |
 | Ошибка: скидка больше суммы / пустой список потребителей | `createExpense` | POST | `/trips/{tripId}/expenses` | `422 invalid_expense` |

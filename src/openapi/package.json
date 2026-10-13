@@ -4,7 +4,8 @@
   "description": "Проверка контракта TripSplit REST API (openapi.yaml): lint + mock-сервер. Не часть .NET-решения.",
   "scripts": {
     "lint": "redocly lint",
-    "mock": "prism mock openapi.yaml"
+    "mock": "prism mock openapi.yaml",
+    "docs": "redocly build-docs openapi.yaml -o api-docs.html"
   },
   "devDependencies": {
     "@redocly/cli": "2.60.0",

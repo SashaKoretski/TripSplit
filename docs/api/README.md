@@ -24,6 +24,12 @@ ADR-001 (WebLab#1) уже разделил механизмы: Web UI остае
 - Без refresh-токена - при истечении клиент повторно вызывает `/auth/token`.
 - Logout как отдельный эндпоинт не нужен: токен stateless, клиент просто
   перестает его использовать.
+- Регистрация (`POST /users`) и вход (`POST /auth/token`) - разные операции
+  (правка 2026-10-08): регистрация создает ресурс и возвращает `409
+  user_already_registered`, если email занят, вместо тихого входа в
+  существующий аккаунт. Это сознательно отличается от Web UI (BR-08
+  WebLab#1), где повторная регистрация логинит без ошибки - подробности и
+  причины в `review.md`.
 
 Любой эндпоинт над `/trips/{tripId}/...` в контракте требует членства
 вызывающего пользователя в этой поездке (`403`, если не участник). Это
@@ -43,8 +49,8 @@ ADR-001 (WebLab#1) уже разделил механизмы: Web UI остае
 | `/trips/{id}/participants` | Create (self-join / invite-by-email), Read collection | `TripParticipant` |
 | `/trips/{id}/settlement` | Read only (производный, не хранится) | `TripStatistics`/`Transfer` |
 | `/trips/{id}/expenses`, `/expenses/{id}` | **Create, Read one, Read collection (paginated), Update (PUT), Partial update (PATCH), Delete** | `Expense` |
-| `/trips/{id}/receipts`, `/receipts/{id}` | Create, Read one, Read collection, Delete | `Receipt` |
-| `/receipts/{id}/image` | Create/Replace (PUT), Read (302 redirect), Delete | `ReceiptImage` |
+| `/trips/{id}/receipts`, `/receipts/{id}` | Create, Read one, Read collection, Delete | `Receipt` (несет `image` целиком, не только флаг) |
+| `/receipts/{id}/image` | Create/Replace (PUT), Read (302 redirect), Delete | `ReceiptImage` (с `url`/`urlExpiresAt`) |
 
 ### Полный CRUD: `Expense`
 

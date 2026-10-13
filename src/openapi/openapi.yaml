@@ -81,9 +81,18 @@ paths:
       operationId: registerUser
       summary: Регистрация пользователя
       description: |
-        Создает нового пользователя. Если email уже зарегистрирован, бизнес-правило
-        BR-08 возвращает существующий аккаунт без создания дубликата -
-        в этом случае ответ `200 OK` вместо `201 Created` (ресурс не был создан этим вызовом).
+        Создает нового пользователя. Строгая create-семантика: если email уже
+        зарегистрирован, запрос отклоняется с `409 user_already_registered`,
+        повторная регистрация НЕ возвращает существующий аккаунт как успех.
+
+        Это осознанно отличается от `UserService.RegisterAsync` в текущей
+        бизнес-логике Web UI (BR-08 там трактует повторную регистрацию как
+        вход в существующий аккаунт без ошибки) - для REST API регистрация и
+        вход разделены явно: регистрация только создает ресурс, вход - через
+        `POST /auth/token`. Бизнес-логика Web UI (`UserService`, BR-08) этим
+        не затрагивается и не меняется; у API-контроллера в WebLab#3
+        появится собственная проверка "email уже существует" перед вызовом
+        создания пользователя.
       security: []
       requestBody:
         required: true
@@ -104,13 +113,16 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/User' }
-        '200':
-          description: Email уже был зарегистрирован - возвращен существующий аккаунт (BR-08)
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/User' }
         '400':
           $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Email уже зарегистрирован
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Error' }
+              examples:
+                default:
+                  value: { type: "about:blank", title: "Conflict", status: 409, code: "user_already_registered", detail: "Пользователь с таким email уже зарегистрирован" }
 
   /users/me:
     get:
@@ -648,8 +660,14 @@ paths:
     get:
       tags: [receipts]
       operationId: getReceiptImage
-      summary: Получить изображение чека
-      description: У чека не более одного изображения (BR-07, `receipt_images.receipt_id UNIQUE`).
+      summary: Получить изображение чека (прямой доступ к файлу)
+      description: |
+        У чека не более одного изображения (BR-07, `receipt_images.
+        receipt_id UNIQUE`). Этот эндпоинт - вариант "файл": отдает редирект
+        прямо на байты, подходит для `<img src="/receipts/{id}/image">`
+        без JS. Если нужна ссылка как данные (например в списке чеков) -
+        используйте поле `ReceiptImage.url` из `Receipt.image` или из ответа
+        `PUT` этого же пути - оба варианта ведут на один и тот же файл.
       responses:
         '302':
           description: Редирект на presigned S3 URL (действителен ограниченное время)
@@ -697,7 +715,10 @@ paths:
                 contentType: image/jpeg, image/png, image/webp, application/pdf
       responses:
         '200':
-          description: Изображение сохранено
+          description: |
+            Изображение сохранено. Ответ сразу содержит `url` - фронту не
+            нужно отдельно дергать `GET /receipts/{id}/image` только чтобы
+            узнать, по какой ссылке показывать только что загруженное фото.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ReceiptImage' }
@@ -842,6 +863,7 @@ components:
             - unauthorized
             - forbidden
             - user_not_found
+            - user_already_registered
             - trip_not_found
             - expense_not_found
             - receipt_not_found
@@ -1005,11 +1027,20 @@ components:
         tripId: { type: string, format: uuid, readOnly: true }
         name: { type: string, minLength: 1, maxLength: 200 }
         date: { type: string, format: date }
-        hasImage: { type: boolean, readOnly: true }
+        image:
+          readOnly: true
+          description: |
+            Изображение чека, если оно загружено (BR-07 - не более одного).
+            Передается целиком, со ссылкой на файл - чтобы фронту не нужно
+            было отдельно обращаться к `GET /receipts/{id}/image` только
+            ради ссылки при отрисовке списка чеков.
+          oneOf:
+            - $ref: '#/components/schemas/ReceiptImage'
+            - type: "null"
 
     ReceiptImage:
       type: object
-      required: [id, receiptId, contentType, fileSizeBytes, originalFileName, uploadedAt]
+      required: [id, receiptId, contentType, fileSizeBytes, originalFileName, uploadedAt, url, urlExpiresAt]
       properties:
         id: { type: string, format: uuid, readOnly: true }
         receiptId: { type: string, format: uuid, readOnly: true }
@@ -1017,6 +1048,24 @@ components:
         fileSizeBytes: { type: integer, readOnly: true }
         originalFileName: { type: string, readOnly: true }
         uploadedAt: { type: string, format: date-time, readOnly: true }
+        url:
+          type: string
+          format: uri
+          readOnly: true
+          description: |
+            Presigned-ссылка на сам файл в S3-совместимом хранилище
+            (`ReceiptImageService.GetDownloadUrlAsync`) - можно подставлять
+            прямо в `<img src>` на фронте, без похода в БД за метаданными.
+        urlExpiresAt:
+          type: string
+          format: date-time
+          readOnly: true
+          description: |
+            Момент, после которого `url` перестанет открываться - сейчас
+            через 15 минут после выдачи (`ReceiptImageService.
+            DownloadUrlLifetime`). После истечения фронту нужно заново
+            запросить объект, содержащий `ReceiptImage` (чек или сам
+            `GET /receipts/{id}/image`), чтобы получить свежую ссылку.
 
     UserSpent:
       type: object
