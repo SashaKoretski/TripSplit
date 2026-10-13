@@ -49,6 +49,26 @@ services:
       timeout: 5s
       retries: 10
 
+  # Контейнеризованное приложение для e2e-стенда ЛР2 (З5 - захват трафика нужен именно
+  # к контейнеру, см. docs/LAB02 traffic capture). Не заменяет обычный dotnet run в dev.
+  webui-test:
+    build:
+      context: ./src
+      dockerfile: TripSplit.WebUI/Dockerfile
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    ports:
+      - "${WEBUI_TEST_PORT:-5301}:8080"
+    environment:
+      ConnectionStrings__Postgres: "Host=postgres-test;Port=5432;Database=tripsplit_test;Username=tripsplit_test;Password=tripsplit_test"
+      # Чеки с загрузкой файла не входят в e2e-сценарий - реальный MinIO/S3 не нужен,
+      # AmazonS3Client создается лениво и не подключается, пока UploadAsync не вызван.
+      ObjectStorage__ServiceUrl: "http://unused.invalid:9000"
+      ObjectStorage__AccessKey: "unused"
+      ObjectStorage__SecretKey: "unused"
+      ObjectStorage__Bucket: "unused"
+
 volumes:
   minio-data:
   postgres-test-data:
