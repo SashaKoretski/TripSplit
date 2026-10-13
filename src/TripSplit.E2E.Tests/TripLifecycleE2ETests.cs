@@ -23,9 +23,16 @@ public sealed class TripLifecycleE2ETests : IAsyncLifetime
 
     private readonly DatabaseInitializer _storage = new(new NpgsqlConnectionFactory(ConnectionString));
 
-    // Откат хранилища к состоянию "до прогона" перед сценарием (Т4) и в аварийном/успешном
-    // teardown после него (Т10) - тем же переиспользуемым скриптом, что и у integration-тестов.
-    public Task InitializeAsync() => _storage.ResetAsync();
+    // Схема (idempotent CREATE TABLE IF NOT EXISTS) + откат к состоянию "до прогона" перед
+    // сценарием (Т4) - на CI e2e-стенд получает совершенно пустой контейнер Postgres, в
+    // отличие от локального дев-контейнера, где схема уже создана предыдущими интеграционными
+    // прогонами. Teardown после сценария (Т10) - тем же переиспользуемым скриптом сброса.
+    public async Task InitializeAsync()
+    {
+        await _storage.InitializeAsync();
+        await _storage.ResetAsync();
+    }
+
     public Task DisposeAsync() => _storage.ResetAsync();
 
     [Fact]

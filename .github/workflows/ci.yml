@@ -3,7 +3,7 @@ name: CI
 # ТИОПО ЛР2, З4/Т5: unit -> integration -> e2e, каждый следующий этап запускается только
 # если предыдущий прошел (jobs.<job>.needs - GitHub сам помечает зависимые джобы "skipped",
 # если предыдущая упала, см. Т8). Контейнер-раннер (Т1) собирается в каждом джобе и клонирует
-# внутри сборки именно тестируемый коммит (github.sha), а не копирует checkout job'а.
+# внутри сборки именно тестируемый коммит (env.REPO_REVISION), а не копирует checkout job'а.
 
 on:
   push:
@@ -12,6 +12,9 @@ on:
 
 env:
   REPO_URL: https://github.com/${{ github.repository }}.git
+  # На событии pull_request github.sha - это синтетический тестовый merge-коммит
+  # (refs/pull/<N>/merge), которого нет в обычном клоне; берем настоящий коммит головы PR.
+  REPO_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
 
 jobs:
   unit:
@@ -19,18 +22,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build test-runner image (clones ${{ github.sha }} inside the build)
+      - name: Build test-runner image (clones ${{ env.REPO_REVISION }} inside the build)
         run: |
           docker build \
             --build-arg REPO_URL="$REPO_URL" \
-            --build-arg REPO_REVISION="${{ github.sha }}" \
-            -t test-runner:${{ github.sha }} \
+            --build-arg REPO_REVISION="${{ env.REPO_REVISION }}" \
+            -t test-runner:${{ env.REPO_REVISION }} \
             docker/test-runner
 
       - name: Run unit tests
         run: |
           mkdir -p results
-          docker run --rm -v "$PWD/results:/results" test-runner:${{ github.sha }} unit
+          docker run --rm -v "$PWD/results:/results" test-runner:${{ env.REPO_REVISION }} unit
 
       - name: Upload unit test report (even on failure, Т8)
         if: always()
@@ -50,8 +53,8 @@ jobs:
         run: |
           docker build \
             --build-arg REPO_URL="$REPO_URL" \
-            --build-arg REPO_REVISION="${{ github.sha }}" \
-            -t test-runner:${{ github.sha }} \
+            --build-arg REPO_REVISION="${{ env.REPO_REVISION }}" \
+            -t test-runner:${{ env.REPO_REVISION }} \
             docker/test-runner
 
       - name: Start a dedicated test storage instance (Т2-Т3)
@@ -72,7 +75,7 @@ jobs:
           mkdir -p results
           docker run --rm --network citest \
             -e TRIPSPLIT_TEST_DB="Host=postgres-test;Port=5432;Database=tripsplit_test;Username=tripsplit_test;Password=tripsplit_test" \
-            -v "$PWD/results:/results" test-runner:${{ github.sha }} integration
+            -v "$PWD/results:/results" test-runner:${{ env.REPO_REVISION }} integration
 
       - name: Upload integration test report (even on failure, Т8)
         if: always()
@@ -100,10 +103,10 @@ jobs:
         run: |
           docker build \
             --build-arg REPO_URL="$REPO_URL" \
-            --build-arg REPO_REVISION="${{ github.sha }}" \
-            -t test-runner:${{ github.sha }} \
+            --build-arg REPO_REVISION="${{ env.REPO_REVISION }}" \
+            -t test-runner:${{ env.REPO_REVISION }} \
             docker/test-runner
-          docker build -f src/TripSplit.WebUI/Dockerfile -t webui:${{ github.sha }} src
+          docker build -f src/TripSplit.WebUI/Dockerfile -t webui:${{ env.REPO_REVISION }} src
 
       - name: Start test storage and the application under test
         run: |
@@ -127,7 +130,7 @@ jobs:
             -e ObjectStorage__AccessKey="unused" \
             -e ObjectStorage__SecretKey="unused" \
             -e ObjectStorage__Bucket="unused" \
-            webui:${{ github.sha }}
+            webui:${{ env.REPO_REVISION }}
           for i in $(seq 1 30); do
             docker run --rm --network citest curlimages/curl:8.10.1 -sf http://webui:8080/Account/Login >/dev/null 2>&1 && break
             sleep 2
@@ -139,7 +142,7 @@ jobs:
           docker run --rm --network citest \
             -e TRIPSPLIT_TEST_DB="Host=postgres-test;Port=5432;Database=tripsplit_test;Username=tripsplit_test;Password=tripsplit_test" \
             -e TRIPSPLIT_E2E_BASE_URL="http://webui:8080" \
-            -v "$PWD/results:/results" test-runner:${{ github.sha }} e2e
+            -v "$PWD/results:/results" test-runner:${{ env.REPO_REVISION }} e2e
 
       - name: Upload E2E test report (even on failure, Т8)
         if: always()
