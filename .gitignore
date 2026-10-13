@@ -34,5 +34,6 @@ src/publish/
 *.runtimeconfig.json
 
 # AI tools
-CLAUDE*
-tasks_web/
+ai/CLAUDE*
+ai/tasks_web/
+ai/tasks_test/
