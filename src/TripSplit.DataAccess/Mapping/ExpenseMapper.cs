@@ -4,11 +4,13 @@ namespace TripSplit.DataAccess.Mapping;
 
 internal static class ExpenseMapper
 {
-    public const string Columns = "id, trip_id, receipt_id, payer_id, name, type, value, discount";
+    public const string Columns =
+        "id, trip_id, receipt_id, payer_id, name, type, value, discount, created_at, updated_at";
 
     public readonly record struct Row(
         Guid Id, Guid TripId, Guid? ReceiptId, Guid PayerId,
-        string Name, ExpenseType Type, decimal Value, decimal Discount);
+        string Name, ExpenseType Type, decimal Value, decimal Discount,
+        DateTime CreatedAt, DateTime UpdatedAt);
 
     public static Row ReadRow(DbDataReader r)
     {
@@ -21,7 +23,9 @@ internal static class ExpenseMapper
             Name:      r.GetString(r.GetOrdinal("name")),
             Type:      ParseType(r.GetString(r.GetOrdinal("type"))),
             Value:     r.GetDecimal(r.GetOrdinal("value")),
-            Discount:  r.GetDecimal(r.GetOrdinal("discount"))
+            Discount:  r.GetDecimal(r.GetOrdinal("discount")),
+            CreatedAt: r.GetDateTime(r.GetOrdinal("created_at")),
+            UpdatedAt: r.GetDateTime(r.GetOrdinal("updated_at"))
         );
     }
 
@@ -35,7 +39,11 @@ internal static class ExpenseMapper
         discount:    row.Discount,
         consumerIds: consumerIds,
         receiptId:   row.ReceiptId
-    );
+    )
+    {
+        CreatedAt = row.CreatedAt,
+        UpdatedAt = row.UpdatedAt
+    };
 
     public static string ToDbType(ExpenseType t) => t switch
     {

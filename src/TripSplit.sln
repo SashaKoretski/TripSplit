@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TripSplit.WebUI", "TripSpli
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TripSplit.TelegramBot", "TripSplit.TelegramBot\TripSplit.TelegramBot.csproj", "{29EBD96B-9DF7-4A53-AA0F-A7AA120E744E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TripSplit.WebUI.Tests", "TripSplit.WebUI.Tests\TripSplit.WebUI.Tests.csproj", "{8414EB75-5D27-41F1-9111-B0756A7AC5C5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -125,6 +127,18 @@ Global
 		{29EBD96B-9DF7-4A53-AA0F-A7AA120E744E}.Release|x64.Build.0 = Release|Any CPU
 		{29EBD96B-9DF7-4A53-AA0F-A7AA120E744E}.Release|x86.ActiveCfg = Release|Any CPU
 		{29EBD96B-9DF7-4A53-AA0F-A7AA120E744E}.Release|x86.Build.0 = Release|Any CPU
+		{8414EB75-5D27-41F1-9111-B0756A7AC5C5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8414EB75-5D27-41F1-9111-B0756A7AC5C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8414EB75-5D27-41F1-9111-B0756A7AC5C5}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8414EB75-5D27-41F1-9111-B0756A7AC5C5}.Debug|x64.Build.0 = Debug|Any CPU
+		{8414EB75-5D27-41F1-9111-B0756A7AC5C5}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8414EB75-5D27-41F1-9111-B0756A7AC5C5}.Debug|x86.Build.0 = Debug|Any CPU
+		{8414EB75-5D27-41F1-9111-B0756A7AC5C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8414EB75-5D27-41F1-9111-B0756A7AC5C5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8414EB75-5D27-41F1-9111-B0756A7AC5C5}.Release|x64.ActiveCfg = Release|Any CPU
+		{8414EB75-5D27-41F1-9111-B0756A7AC5C5}.Release|x64.Build.0 = Release|Any CPU
+		{8414EB75-5D27-41F1-9111-B0756A7AC5C5}.Release|x86.ActiveCfg = Release|Any CPU
+		{8414EB75-5D27-41F1-9111-B0756A7AC5C5}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

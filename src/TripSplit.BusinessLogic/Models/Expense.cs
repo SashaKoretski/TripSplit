@@ -14,6 +14,11 @@ public class Expense
     public decimal Discount { get; init; }
     public List<Guid> ConsumerIds { get; init; } = new();
 
+    // Заполняются из БД (DEFAULT now() / updated_at = now() при UpdateAsync) - не часть
+    // инвариантов конструктора, поэтому init-свойства с дефолтом, а не параметры.
+    public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; init; } = DateTime.UtcNow;
+
     // Сумма, которая реально делится между потребителями
     public decimal EffectiveAmount => Value - Discount;
 
