@@ -6,7 +6,8 @@ public sealed class DatabaseInitializer
 {
     private readonly IDbConnectionFactory _factory;
 
-    public DatabaseInitializer(IDbConnectionFactory factory) => _factory = factory;
+    public DatabaseInitializer(IDbConnectionFactory factory) =>
+        _factory = factory ?? throw new ArgumentNullException(nameof(factory));
 
     public async Task InitializeAsync(CancellationToken ct = default)
     {

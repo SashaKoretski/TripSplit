@@ -92,9 +92,9 @@ public class ReceiptImageServiceTests
         _sut = new ReceiptImageService(_images.Object, _receipts.Object, _trips.Object, _storage.Object, options);
         using var content = new MemoryStream(new byte[20]);
 
-        await Assert.ThrowsExceptionAsync<InvalidReceiptImageException>(
-            () => _sut.UploadAsync(Guid.NewGuid(), content, "a.jpg", "image/jpeg", 20));
+        var act = () => _sut.UploadAsync(Guid.NewGuid(), content, "a.jpg", "image/jpeg", 20);
 
+        await Assert.ThrowsExactlyAsync<InvalidReceiptImageException>(act);
         _receipts.Verify(r => r.GetByIdAsync(It.IsAny<Guid>()), Times.Never);
     }
 
@@ -103,8 +103,9 @@ public class ReceiptImageServiceTests
     {
         using var content = new MemoryStream(new byte[1]);
 
-        await Assert.ThrowsExceptionAsync<InvalidReceiptImageException>(
-            () => _sut.UploadAsync(Guid.NewGuid(), content, "a.exe", "application/x-msdownload", 1));
+        var act = () => _sut.UploadAsync(Guid.NewGuid(), content, "a.exe", "application/x-msdownload", 1);
+
+        await Assert.ThrowsExactlyAsync<InvalidReceiptImageException>(act);
     }
 
     [TestMethod]
@@ -114,8 +115,9 @@ public class ReceiptImageServiceTests
         _receipts.Setup(r => r.GetByIdAsync(receiptId)).ReturnsAsync((Receipt?)null);
         using var content = new MemoryStream(new byte[1]);
 
-        await Assert.ThrowsExceptionAsync<ReceiptNotFoundException>(
-            () => _sut.UploadAsync(receiptId, content, "a.jpg", "image/jpeg", 1));
+        var act = () => _sut.UploadAsync(receiptId, content, "a.jpg", "image/jpeg", 1);
+
+        await Assert.ThrowsExactlyAsync<ReceiptNotFoundException>(act);
     }
 
     [TestMethod]
@@ -126,10 +128,29 @@ public class ReceiptImageServiceTests
         SetupActiveReceipt(receipt, trip);
         using var content = new MemoryStream(new byte[1]);
 
-        await Assert.ThrowsExceptionAsync<TripAlreadyFinishedException>(
-            () => _sut.UploadAsync(receipt.Id, content, "a.jpg", "image/jpeg", 1));
+        var act = () => _sut.UploadAsync(receipt.Id, content, "a.jpg", "image/jpeg", 1);
 
+        await Assert.ThrowsExactlyAsync<TripAlreadyFinishedException>(act);
         _images.Verify(i => i.AddAsync(It.IsAny<ReceiptImage>()), Times.Never);
+    }
+
+    [TestMethod]
+    public async Task GetByReceiptAsync_ImageExists_ReturnsIt()
+    {
+        var image = MakeImage();
+        _images.Setup(i => i.GetByReceiptAsync(image.ReceiptId)).ReturnsAsync(image);
+
+        var result = await _sut.GetByReceiptAsync(image.ReceiptId);
+
+        Assert.AreSame(image, result);
+    }
+
+    [TestMethod]
+    public async Task GetByReceiptAsync_EmptyReceiptId_ThrowsArgumentException()
+    {
+        var act = () => _sut.GetByReceiptAsync(Guid.Empty);
+
+        await Assert.ThrowsExactlyAsync<ArgumentException>(act);
     }
 
     [TestMethod]
@@ -151,8 +172,9 @@ public class ReceiptImageServiceTests
         var receiptId = Guid.NewGuid();
         _images.Setup(i => i.GetByReceiptAsync(receiptId)).ReturnsAsync((ReceiptImage?)null);
 
-        await Assert.ThrowsExceptionAsync<ReceiptImageNotFoundException>(
-            () => _sut.GetDownloadUrlAsync(receiptId));
+        var act = () => _sut.GetDownloadUrlAsync(receiptId);
+
+        await Assert.ThrowsExactlyAsync<ReceiptImageNotFoundException>(act);
     }
 
     [TestMethod]

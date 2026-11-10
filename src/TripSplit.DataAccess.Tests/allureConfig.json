@@ -1,0 +1,6 @@
+{
+  "allure": {
+    "directory": "allure-results",
+    "title": "TripSplit.DataAccess.Tests (LAB01 unit tests)"
+  }
+}

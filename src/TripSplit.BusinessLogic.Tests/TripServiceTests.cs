@@ -55,22 +55,22 @@ public class TripServiceTests
         var organizerId = Guid.NewGuid();
         _users.Setup(r => r.GetByIdAsync(organizerId)).ReturnsAsync((User?)null);
 
-        await Assert.ThrowsExceptionAsync<UserNotFoundException>(
-            () => _sut.CreateAsync("Trip", "RUB", organizerId));
+        var act = () => _sut.CreateAsync("Trip", "RUB", organizerId);
 
+        await Assert.ThrowsExactlyAsync<UserNotFoundException>(act);
         _trips.Verify(r => r.AddAsync(It.IsAny<Trip>()), Times.Never);
     }
 
     [TestMethod]
     public async Task CreateAsync_EmptyOrganizerId_ThrowsArgumentException()
     {
-        await Assert.ThrowsExceptionAsync<ArgumentException>(
-            () => _sut.CreateAsync("Trip", "RUB", Guid.Empty));
+        var act = () => _sut.CreateAsync("Trip", "RUB", Guid.Empty);
 
+        await Assert.ThrowsExactlyAsync<ArgumentException>(act);
         _users.Verify(r => r.GetByIdAsync(It.IsAny<Guid>()), Times.Never);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("", "RUB")]
     [DataRow("  ", "RUB")]
     [DataRow("Trip", "")]
@@ -81,9 +81,9 @@ public class TripServiceTests
         var organizer = MakeUser();
         _users.Setup(r => r.GetByIdAsync(organizer.Id)).ReturnsAsync(organizer);
 
-        await Assert.ThrowsExceptionAsync<ArgumentException>(
-            () => _sut.CreateAsync(name, currency, organizer.Id));
+        var act = () => _sut.CreateAsync(name, currency, organizer.Id);
 
+        await Assert.ThrowsExactlyAsync<ArgumentException>(act);
         _trips.Verify(r => r.AddAsync(It.IsAny<Trip>()), Times.Never);
     }
 
@@ -104,16 +104,17 @@ public class TripServiceTests
         var id = Guid.NewGuid();
         _trips.Setup(r => r.GetByIdAsync(id)).ReturnsAsync((Trip?)null);
 
-        await Assert.ThrowsExceptionAsync<TripNotFoundException>(
-            () => _sut.GetByIdAsync(id));
+        var act = () => _sut.GetByIdAsync(id);
+
+        await Assert.ThrowsExactlyAsync<TripNotFoundException>(act);
     }
 
     [TestMethod]
     public async Task GetByIdAsync_EmptyId_ThrowsArgumentException()
     {
-        await Assert.ThrowsExceptionAsync<ArgumentException>(
-            () => _sut.GetByIdAsync(Guid.Empty));
+        var act = () => _sut.GetByIdAsync(Guid.Empty);
 
+        await Assert.ThrowsExactlyAsync<ArgumentException>(act);
         _trips.Verify(r => r.GetByIdAsync(It.IsAny<Guid>()), Times.Never);
     }
 
@@ -132,8 +133,9 @@ public class TripServiceTests
     [TestMethod]
     public async Task GetByUserAsync_EmptyId_Throws()
     {
-        await Assert.ThrowsExceptionAsync<ArgumentException>(
-            () => _sut.GetByUserAsync(Guid.Empty));
+        var act = () => _sut.GetByUserAsync(Guid.Empty);
+
+        await Assert.ThrowsExactlyAsync<ArgumentException>(act);
     }
 
     [TestMethod]
@@ -172,9 +174,9 @@ public class TripServiceTests
         var user = MakeUser();
         _trips.Setup(r => r.GetByIdAsync(trip.Id)).ReturnsAsync(trip);
 
-        await Assert.ThrowsExceptionAsync<TripAlreadyFinishedException>(
-            () => _sut.AddParticipantAsync(trip.Id, user.Id));
+        var act = () => _sut.AddParticipantAsync(trip.Id, user.Id);
 
+        await Assert.ThrowsExactlyAsync<TripAlreadyFinishedException>(act);
         _users.Verify(r => r.GetByIdAsync(It.IsAny<Guid>()), Times.Never);
         _trips.Verify(r => r.UpdateAsync(It.IsAny<Trip>()), Times.Never);
     }
@@ -185,8 +187,9 @@ public class TripServiceTests
         var tripId = Guid.NewGuid();
         _trips.Setup(r => r.GetByIdAsync(tripId)).ReturnsAsync((Trip?)null);
 
-        await Assert.ThrowsExceptionAsync<TripNotFoundException>(
-            () => _sut.AddParticipantAsync(tripId, Guid.NewGuid()));
+        var act = () => _sut.AddParticipantAsync(tripId, Guid.NewGuid());
+
+        await Assert.ThrowsExactlyAsync<TripNotFoundException>(act);
     }
 
     [TestMethod]
@@ -197,18 +200,18 @@ public class TripServiceTests
         _trips.Setup(r => r.GetByIdAsync(trip.Id)).ReturnsAsync(trip);
         _users.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync((User?)null);
 
-        await Assert.ThrowsExceptionAsync<UserNotFoundException>(
-            () => _sut.AddParticipantAsync(trip.Id, userId));
+        var act = () => _sut.AddParticipantAsync(trip.Id, userId);
 
+        await Assert.ThrowsExactlyAsync<UserNotFoundException>(act);
         _trips.Verify(r => r.UpdateAsync(It.IsAny<Trip>()), Times.Never);
     }
 
     [TestMethod]
     public async Task AddParticipantAsync_EmptyUserId_Throws()
     {
-        await Assert.ThrowsExceptionAsync<ArgumentException>(
-            () => _sut.AddParticipantAsync(Guid.NewGuid(), Guid.Empty));
+        var act = () => _sut.AddParticipantAsync(Guid.NewGuid(), Guid.Empty);
 
+        await Assert.ThrowsExactlyAsync<ArgumentException>(act);
         _trips.Verify(r => r.GetByIdAsync(It.IsAny<Guid>()), Times.Never);
     }
 
@@ -230,9 +233,9 @@ public class TripServiceTests
         var trip = MakeTrip(status: TripStatus.Finished);
         _trips.Setup(r => r.GetByIdAsync(trip.Id)).ReturnsAsync(trip);
 
-        await Assert.ThrowsExceptionAsync<TripAlreadyFinishedException>(
-            () => _sut.FinishAsync(trip.Id));
+        var act = () => _sut.FinishAsync(trip.Id);
 
+        await Assert.ThrowsExactlyAsync<TripAlreadyFinishedException>(act);
         _trips.Verify(r => r.UpdateAsync(It.IsAny<Trip>()), Times.Never);
     }
 
@@ -242,7 +245,8 @@ public class TripServiceTests
         var id = Guid.NewGuid();
         _trips.Setup(r => r.GetByIdAsync(id)).ReturnsAsync((Trip?)null);
 
-        await Assert.ThrowsExceptionAsync<TripNotFoundException>(
-            () => _sut.FinishAsync(id));
+        var act = () => _sut.FinishAsync(id);
+
+        await Assert.ThrowsExactlyAsync<TripNotFoundException>(act);
     }
 }

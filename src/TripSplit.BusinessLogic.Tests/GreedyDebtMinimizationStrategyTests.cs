@@ -11,12 +11,15 @@ public class GreedyDebtMinimizationStrategyTests
     private GreedyDebtMinimizationStrategy _sut = null!;
 
     [TestInitialize]
-
-    public void Setup() => _sut = new GreedyDebtMinimizationStrategy( new DebtSettlementOptions { MinTransferAmount = 0.01m });
+    public void Setup() => _sut = new GreedyDebtMinimizationStrategy(new DebtSettlementOptions { MinTransferAmount = 0.01m });
 
     [TestMethod]
-    public void Minimize_Null_Throws() =>
-        Assert.ThrowsException<ArgumentNullException>(() => _sut.Minimize(null!));
+    public void Minimize_Null_Throws()
+    {
+        var act = () => _sut.Minimize(null!);
+
+        Assert.ThrowsExactly<ArgumentNullException>(act);
+    }
 
     [TestMethod]
     public void Minimize_Empty_ReturnsEmpty()
@@ -49,7 +52,9 @@ public class GreedyDebtMinimizationStrategyTests
             [Guid.NewGuid()] = 50m,
         };
 
-        Assert.ThrowsException<ArgumentException>(() => _sut.Minimize(balances));
+        var act = () => _sut.Minimize(balances);
+
+        Assert.ThrowsExactly<ArgumentException>(act);
     }
 
     [TestMethod]

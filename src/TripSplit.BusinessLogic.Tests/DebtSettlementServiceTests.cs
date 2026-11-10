@@ -40,9 +40,9 @@ public class DebtSettlementServiceTests
     [TestMethod]
     public async Task Calculate_EmptyTripId_Throws()
     {
-        await Assert.ThrowsExceptionAsync<ArgumentException>(
-            () => _sut.CalculateSettlementAsync(Guid.Empty));
+        var act = () => _sut.CalculateSettlementAsync(Guid.Empty);
 
+        await Assert.ThrowsExactlyAsync<ArgumentException>(act);
         _trips.Verify(r => r.GetByIdAsync(It.IsAny<Guid>()), Times.Never);
     }
 
@@ -52,9 +52,9 @@ public class DebtSettlementServiceTests
         var tripId = Guid.NewGuid();
         _trips.Setup(r => r.GetByIdAsync(tripId)).ReturnsAsync((Trip?)null);
 
-        await Assert.ThrowsExceptionAsync<TripNotFoundException>(
-            () => _sut.CalculateSettlementAsync(tripId));
+        var act = () => _sut.CalculateSettlementAsync(tripId);
 
+        await Assert.ThrowsExactlyAsync<TripNotFoundException>(act);
         _expenses.Verify(r => r.GetByTripAsync(It.IsAny<Guid>()), Times.Never);
     }
 
@@ -117,7 +117,6 @@ public class DebtSettlementServiceTests
     [TestMethod]
     public async Task Calculate_SingleExpense_ComputesCorrectBalances()
     {
-        // A заплатил 90, потребители: A, B, C — каждому доля 30. Балансы: A=+60, B=−30, C=−30.
         var trip = MakeTrip();
         var a = Guid.NewGuid();
         var b = Guid.NewGuid();
@@ -145,8 +144,6 @@ public class DebtSettlementServiceTests
     [TestMethod]
     public async Task Calculate_MultipleExpenses_BalancesAccumulate()
     {
-        // A потратил 60 на A,B (доля 30). B потратил 40 на A,B (доля 20)
-        // Балансы: A = +60 - 30 - 20 = +10. B = +40 - 30 - 20 = -10
         var trip = MakeTrip();
         var a = Guid.NewGuid();
         var b = Guid.NewGuid();
@@ -180,7 +177,6 @@ public class DebtSettlementServiceTests
             MakeExpense(trip.Id, a, 100m, new[] { a, b }),
         };
         var expectedTransfers = new List<Transfer> { new(b, a, 50m) };
-
         _trips.Setup(r => r.GetByIdAsync(trip.Id)).ReturnsAsync(trip);
         _expenses.Setup(r => r.GetByTripAsync(trip.Id)).ReturnsAsync(expenses);
         _strategy.Setup(s => s.Minimize(It.IsAny<IReadOnlyDictionary<Guid, decimal>>()))

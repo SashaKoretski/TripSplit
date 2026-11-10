@@ -5,6 +5,7 @@ using Xunit;
 
 namespace TripSplit.DataAccess.Tests;
 
+[Trait("Category", "Integration")]
 [Collection("Database")]
 public sealed class UserRepositoryTests
 {
@@ -68,7 +69,10 @@ public sealed class UserRepositoryTests
         var second = new User(Guid.NewGuid(), "Egor Two", first.Email, "gid-egor-2");
 
         await _repo.AddAsync(first);
-        await Assert.ThrowsAsync<DuplicateKeyException>(() => _repo.AddAsync(second));
+
+        var act = () => _repo.AddAsync(second);
+
+        await Assert.ThrowsAsync<DuplicateKeyException>(act);
     }
 
     private static User NewUser(string tag) => new(

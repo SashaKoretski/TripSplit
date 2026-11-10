@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  LAB01 (Т10): запуск юнит-тестов BusinessLogic в случайном порядке.
+  Использование: dotnet test TripSplit.BusinessLogic.Tests -s random-order.runsettings
+  Без RandomTestOrderSeed MSTest генерирует новый seed на каждый запуск и печатает его в
+  журнал (см. TRX/консоль) — для воспроизводимости укажите конкретное значение seed.
+-->
+<RunSettings>
+  <MSTest>
+    <RandomizeTestOrder>true</RandomizeTestOrder>
+  </MSTest>
+</RunSettings>

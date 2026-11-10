@@ -36,3 +36,9 @@ src/publish/
 # AI tools
 CLAUDE*
 tasks_web/
+tasks_test/
+artifacts/
+**/openapi/
+
+# Lab evidence files (local-only, not part of the graded deliverable)
+/LAB01_EVIDENCE*.txt

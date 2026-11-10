@@ -5,6 +5,7 @@ using Xunit;
 
 namespace TripSplit.DataAccess.Tests;
 
+[Trait("Category", "Integration")]
 [Collection("Database")]
 public sealed class ExpenseRepositoryTests
 {
