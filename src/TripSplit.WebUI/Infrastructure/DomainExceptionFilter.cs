@@ -18,6 +18,11 @@ public class DomainExceptionFilter : IExceptionFilter
 
     public void OnException(ExceptionContext context)
     {
+        // API-контроллеры (/api/v1/...) обрабатывают исключения отдельным ApiExceptionFilter
+        // (JSON Problem Details, не редирект) - этот фильтр их не касается.
+        if (context.HttpContext.Request.Path.StartsWithSegments("/api"))
+            return;
+
         var message = context.Exception switch
         {
             InvalidExpenseException e     => e.Message,

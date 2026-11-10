@@ -1,5 +1,93 @@
 # AI_REVIEW
 
+## WebLab#3 - реализация REST API по контракту (2026-10-18)
+
+**Задача**: подключить `src/openapi/openapi.yaml` (WebLab#2) к существующей
+бизнес-логике и доступу к данным по `ai/tasks_web/LAB03.md` - все 24
+`operationId`, Swagger UI, Repository/domain/DTO границы, тесты, проверка
+нарушения контракта. Старый публичный API сохранять не нужно - его не было
+(подтверждено в WebLab#2).
+
+**Агент/модель**: Claude (Sonnet 5), Claude Code CLI.
+
+**Исходный блокер**: `lab3_web` был веткой-сиблингом `lab2_web` (оба от
+коммита merge `lab1_web`), контракт и документация WebLab#2 физически
+отсутствовали в рабочем дереве. Пользователь смержил `lab2_web` в `main`
+(PR #12) и пересобрал `lab3_web` от обновленного `main` - без участия ИИ в
+решении о слиянии, только анализ и констатация проблемы.
+
+**Ключевые созданные/измененные артефакты**:
+
+- `src/TripSplit.WebUI/Controllers/Api/V1/*` (новые: `AuthController`,
+  `UsersController`, `TripsController`, `ExpensesController`,
+  `ReceiptsController`) - все 24 `operationId`.
+- `src/TripSplit.WebUI/Dtos/V1/*` (новые) - API DTO, отдельные от domain-моделей.
+- `src/TripSplit.WebUI/Infrastructure/Api/*` (новые) - JWT issuance,
+  централизованный `ApiExceptionFilter` (domain exception -> RFC 7807 JSON),
+  `ForbiddenException`/`UserAlreadyRegisteredException` (API-level, не в BL).
+- `src/TripSplit.WebUI/Program.cs` - JWT Bearer auth, Swagger UI (раздает
+  статический `openapi.yaml`, без codegen из кода - одна спецификация).
+- `src/TripSplit.WebUI/Infrastructure/DomainExceptionFilter.cs` - 1 проверка
+  (пропускает `/api/*`, чтобы MVC-фильтр не конфликтовал с API-фильтром).
+- `src/TripSplit.BusinessLogic/Models/Expense.cs`,
+  `DataAccess/Mapping/ExpenseMapper.cs`,
+  `BusinessLogic/Interfaces/Services/IReceiptImageService.cs`,
+  `BusinessLogic/Models/Exceptions/UserNotFoundException.cs` - аддитивные
+  правки (см. `docs/api/implementation.md`), ни один существующий вызывающий
+  код не изменен.
+- `src/TripSplit.WebUI.Tests/*` (новый проект, xUnit) - 16 интеграционных
+  тестов через `WebApplicationFactory<Program>` и реальный Postgres.
+- `docs/api/implementation.md` (новый) - карта `operationId` -> код, найденные
+  несоответствия контракта, список непроверенного.
+
+**Выполненные проверки**:
+
+- `dotnet build TripSplit.sln` - 0 ошибок на каждом этапе.
+- `dotnet test TripSplit.BusinessLogic.Tests` (MSTest) - 123/123, без изменений,
+  на каждом этапе.
+- `dotnet test TripSplit.WebUI.Tests` (xUnit, отдельная БД `tripsplit_test`,
+  не `tripsplit_db`) - 16/16.
+- Живые HTTP-запросы (`curl`) на реальном `tripsplit_db` для каждой из 24
+  операций, включая мультишаговые сценарии (создание поездки -> участники ->
+  трата -> чек -> PATCH привязки/отвязки -> расчет -> завершение -> удаление);
+  тестовые данные удалены после проверки.
+- Намеренное нарушение контракта: `ExpenseDto.EffectiveAmount` временно
+  замаплен на `Value` вместо `Value - Discount` - `dotnet test` показал
+  реальный `FAIL` (`Expected: 50, Actual: 60`), правка отменена, повторный
+  прогон - `PASS`. Не коммитилось в сломанном виде.
+- Совместимость Web UI: полный cookie-based логин (`Account/LoginByEmail`) и
+  `GET /Trips` с сессией - `200`, без изменений в MVC-контроллерах/views.
+- `redocly lint` на `src/openapi/openapi.yaml` - 0/0, контракт не менялся.
+
+**Ключевые решения**:
+
+1. Версия API - только `/api/v1`, без параллельного "старого" API - его не
+   было (решено еще в WebLab#2, подтверждено повторно по факту кода).
+2. JWT: `Microsoft.AspNetCore.Authentication.JwtBearer`, HMAC-ключ в
+   `appsettings.json` как dev-плейсхолдер (тот же стиль, что уже принят для
+   Postgres/MinIO в проекте).
+3. Swagger UI - `Swashbuckle.AspNetCore.SwaggerUI` (только UI, без
+   `SwaggerGen`) раздает статический `src/openapi/openapi.yaml` - не
+   допущено две расходящиеся спецификации.
+4. Пагинация (`listTrips`, `listTripExpenses`) - in-memory в API-слое, без
+   изменения `Repository`/SQL (коллекции на пользователя/поездку сейчас малы).
+5. `deleteExpense`/`deleteReceipt` - код оставлен физическим удалением,
+   расхождение с текстом контракта ("логическое удаление") зафиксировано, не
+   исправлено самостоятельно (наблюдаемое поведение API не меняется).
+6. Интеграционные тесты - отдельная БД `tripsplit_test`, чтобы не TRUNCATE'ить
+   `tripsplit_db` (там уже есть ручные данные пользователя).
+
+**Отклоненные/отложенные альтернативы**:
+
+- Полноценный JSON Patch (RFC 6902) для `patchExpense` вместо Merge Patch -
+  решение принято еще в WebLab#2, не пересматривалось.
+- Пагинация на уровне `Repository` (SQL `LIMIT`/`OFFSET`) - отложено как
+  избыточное для текущего масштаба; если коллекции вырастут, это отдельная
+  задача без изменения контракта.
+- Переносить membership-check в `addTripParticipant` "для строгости" -
+  отклонено: это сделало бы self-join логически невозможным, см.
+  `docs/api/implementation.md`.
+
 ## WebLab#2 - правки по фидбеку (2026-10-08)
 
 **Задача**: пользователь принес две правки к уже готовому контракту

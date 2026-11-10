@@ -37,3 +37,5 @@ src/publish/
 ai/CLAUDE*
 ai/tasks_web/
 ai/tasks_test/
+artifacts/
+src/openapi/node_modules/

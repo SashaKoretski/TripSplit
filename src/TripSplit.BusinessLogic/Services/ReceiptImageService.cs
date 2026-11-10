@@ -9,7 +9,9 @@ namespace TripSplit.BusinessLogic.Services;
 
 public class ReceiptImageService : IReceiptImageService
 {
-    private static readonly TimeSpan DownloadUrlLifetime = TimeSpan.FromMinutes(15);
+    private static readonly TimeSpan DownloadUrlLifetimeValue = TimeSpan.FromMinutes(15);
+
+    public TimeSpan DownloadUrlLifetime => DownloadUrlLifetimeValue;
 
     private readonly IReceiptImageRepository _images;
     private readonly IReceiptRepository _receipts;
